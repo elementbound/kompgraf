@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 #include <map>
-#include <vector>
+#include <string>
 #include "frame/buffer.hpp"
 
 class basic_mesh
@@ -11,7 +11,7 @@ class basic_mesh
 	public: 
 		struct stream_data
 		{
-			unsigned index; 
+			std::string name; 
 			GLenum type;
 			GLenum buffer_type;
 			unsigned components;

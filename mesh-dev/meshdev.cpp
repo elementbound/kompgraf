@@ -93,7 +93,7 @@ class window_triangle: public window
 				mesh[pos].buffer_type = GL_ARRAY_BUFFER;
 				mesh[pos].components = 2;
 				mesh[pos].normalized = 0;
-				mesh[pos].index = 0; //TODO
+				mesh[pos].name = "vertexPosition";
 				
 				mesh[pos].data <<
 					std::cos(degtorad(  0.0f)) << std::sin(degtorad(  0.0f)) << 
@@ -107,7 +107,7 @@ class window_triangle: public window
 				mesh[color].buffer_type = GL_ARRAY_BUFFER;
 				mesh[color].components = 3;
 				mesh[color].normalized = 0;
-				mesh[color].index = 1;
+				mesh[color].name = "vertexColor";
 				
 				mesh[color].data << 
 					1.0f << 0.0f << 0.0f << 

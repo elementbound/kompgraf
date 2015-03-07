@@ -66,12 +66,19 @@ void separated_mesh::bind()
 	if(m_VAO == 0)
 		glGenVertexArrays(1, &m_VAO);
 	
+	int active_shader = 0;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &active_shader);
+	
 	glBindVertexArray(m_VAO);
 	for(auto& p : m_Streams)
 	{
+		int attrib = glGetAttribLocation(active_shader, p.second.name.c_str());
+		if(attrib == -1)
+			continue;
+		
 		glBindBuffer(p.second.buffer_type, m_VBOs[p.first]);
-		glEnableVertexAttribArray(p.second.index);
-		glVertexAttribPointer(p.second.index, p.second.components, p.second.type, p.second.normalized, 0, 0);
+		glEnableVertexAttribArray(attrib);
+		glVertexAttribPointer(attrib, p.second.components, p.second.type, p.second.normalized, 0, 0);
 	}
 }
 
