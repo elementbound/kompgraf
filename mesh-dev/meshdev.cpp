@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "frame/window.h"
 #include "frame/shader.h"
+#include "mesh.h"
 
 #include <iostream>
 #include <fstream>
@@ -38,126 +39,6 @@ const char* gl_error_str(GLenum err)
 			return "GL_OUT_OF_MEMORY";
 		default: 
 			return "Say wat?";
-	}
-}
-
-#include "frame/buffer.hpp"
-#include <map>
-
-class basic_mesh
-{
-	public: 
-		struct stream_data
-		{
-			unsigned index; 
-			GLenum type;
-			GLenum buffer_type;
-			unsigned components;
-			bool normalized;
-			
-			buffer data;
-		};
-		
-		//TODO: implement
-		basic_mesh();
-		basic_mesh(const basic_mesh&) = delete;
-		~basic_mesh();
-		
-		basic_mesh& operator=(const basic_mesh&) = delete;
-	
-		unsigned add_stream();
-		bool     remove_stream(unsigned id);
-		
-		stream_data& get_stream(unsigned id);
-		const stream_data& get_stream(unsigned id) const;
-		stream_data& operator[](unsigned id);
-		const stream_data& operator[](unsigned id) const;
-		
-		std::vector<stream_data> streams;
-		virtual void upload() = 0;
-		virtual void bind() = 0;
-		virtual void draw() = 0;
-		
-	protected: 
-		std::map<unsigned, stream_data> m_Streams;
-		GLuint m_VAO;
-};
-
-basic_mesh::basic_mesh()
-{
-	glGenVertexArrays(1, &m_VAO);
-	std::cout << "Acquired VAO#" << m_VAO << std::endl;
-}
-
-basic_mesh::~basic_mesh()
-{
-	glDeleteVertexArrays(1, &m_VAO);
-	std::cout << "Released VAO#" << m_VAO << std::endl;
-}
-
-unsigned basic_mesh::add_stream()
-{
-	unsigned nid = 0;
-	if(!m_Streams.empty())
-		nid = m_Streams.rbegin()->first+1;
-		
-	m_Streams.insert({nid, stream_data()});
-	return nid;
-}
-
-bool basic_mesh::remove_stream(unsigned id)
-{
-	return m_Streams.erase(id);
-}
-
-basic_mesh::stream_data& basic_mesh::get_stream(unsigned id)
-{
-	return m_Streams.at(id);
-}
-
-const basic_mesh::stream_data& basic_mesh::get_stream(unsigned id) const
-{
-	return m_Streams.at(id);
-}
-
-basic_mesh::stream_data& basic_mesh::operator[](unsigned id)
-{
-	return this->get_stream(id);
-}
-
-const basic_mesh::stream_data& basic_mesh::operator[](unsigned id) const 
-{
-	return this->get_stream(id);
-}
-
-class separated_mesh : public basic_mesh
-{
-	private: 
-		std::map<unsigned, GLuint> m_VBOs;
-		
-	public: 
-		separated_mesh() = default;
-		separated_mesh(const separated_mesh&) = default;
-		~separated_mesh();
-	
-		void upload();
-		void bind();
-		void draw();
-};
-
-void separated_mesh::upload()
-{
-	for(std::pair<const unsigned, stream_data>& p: m_Streams)
-	{
-		if(!m_VBOs.count(p.first))
-		{
-			GLuint id;
-			glGenBuffers(1, &id);
-			m_VBOs.insert({p.first, id});
-		}
-		
-		glBindBuffer(p.second.buffer_type, m_VBOs[p.first]);
-		glBufferData(p.second.buffer_type, p.second.data.size(), p.second.data.data(), GL_STATIC_DRAW);
 	}
 }
 

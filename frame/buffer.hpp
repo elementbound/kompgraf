@@ -88,7 +88,7 @@ buffer& operator<<(buffer& b, const T& x)
 }
 
 template <>
-buffer& operator<< <std::string>(buffer& b, const std::string& x)
+inline buffer& operator<< <std::string>(buffer& b, const std::string& x)
 {
 	b.append(x.data(), x.size());
 	return b;
