@@ -3,8 +3,7 @@
 
 basic_mesh::basic_mesh()
 {
-	glGenVertexArrays(1, &m_VAO);
-	std::cout << "Acquired VAO#" << m_VAO << std::endl;
+	m_VAO = 0;
 }
 
 basic_mesh::~basic_mesh()

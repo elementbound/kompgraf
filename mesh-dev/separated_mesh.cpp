@@ -1,4 +1,5 @@
 #include "separated_mesh.h"
+#include <iostream>
 
 inline unsigned gl_type_size(GLenum type)
 {
@@ -62,6 +63,12 @@ void separated_mesh::upload()
 
 void separated_mesh::bind()
 {
+	if(m_VAO == 0)
+	{
+		glGenVertexArrays(1, &m_VAO);
+		std::cout << "Acquired VAO#" << m_VAO << std::endl;
+	}
+	
 	glBindVertexArray(m_VAO);
 	for(auto& p : m_Streams)
 	{
