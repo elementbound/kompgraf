@@ -88,16 +88,9 @@ buffer& operator<<(buffer& b, const T& x)
 }
 
 template <>
-buffer& operator<< <const char*>(buffer& b, const char* x)
-{
-	b.append(x, strlen(x));
-	return b;
-}
-
-template <>
 buffer& operator<< <std::string>(buffer& b, const std::string& x)
 {
-	b << x.c_str();
+	b.append(x.data(), x.size());
 	return b;
 }
 
