@@ -35,7 +35,6 @@ class basic_mesh
 		stream_data& operator[](unsigned id);
 		const stream_data& operator[](unsigned id) const;
 		
-		std::vector<stream_data> streams;
 		virtual void upload() = 0;
 		virtual void bind() = 0;
 		virtual void draw() = 0;

@@ -36,6 +36,14 @@ inline unsigned gl_type_size(GLenum type)
 	}
 }
 
+separated_mesh::~separated_mesh()
+{
+	for(auto& p : m_VBOs)
+		glDeleteBuffers(1, &p.second);
+	
+	glDeleteVertexArrays(1, &m_VAO);
+}
+
 void separated_mesh::upload()
 {
 	for(std::pair<const unsigned, stream_data>& p: m_Streams)
@@ -55,7 +63,7 @@ void separated_mesh::upload()
 void separated_mesh::bind()
 {
 	glBindVertexArray(m_VAO);
-	for(unsigned i=0; i<streams.size(); i++)
+	for(auto& p : m_Streams)
 	{
 		/*
 		struct stream_data
@@ -77,11 +85,9 @@ void separated_mesh::bind()
 			GLsizei stride,
 			const GLvoid * pointer);
 		*/
-		stream_data& sd = streams[i];
-		
-		glBindBuffer(sd.buffer_type, m_VBOs[i]);
-		glEnableVertexAttribArray(sd.index);
-		glVertexAttribPointer(sd.index, sd.components, sd.type, sd.normalized, 0, 0);
+		glBindBuffer(p.second.buffer_type, m_VBOs[p.first]);
+		glEnableVertexAttribArray(p.second.index);
+		glVertexAttribPointer(p.second.index, p.second.components, p.second.type, p.second.normalized, 0, 0);
 	}
 }
 
@@ -91,7 +97,7 @@ void separated_mesh::draw()
 		return;
 	
 	unsigned vertex_count = 0;
-	const stream_data& sd = streams[0];
+	const stream_data& sd = m_Streams.begin()->second;
 	vertex_count  = sd.data.size() / (sd.components * gl_type_size(sd.type));
 	
 	glBindVertexArray(m_VAO);

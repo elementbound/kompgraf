@@ -67,6 +67,8 @@ class window_triangle: public window
 		GLuint vao;
 		shader_program program;
 		
+		separated_mesh mesh;
+		
 	protected: 
 		void on_open()
 		{
@@ -96,20 +98,40 @@ class window_triangle: public window
 				0.0, 0.0, 1.0
 			};
 			
-			std::cout << "Creating VBOs... ";
-			glGenBuffers(1, &vbo);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
-			
-			glGenBuffers(1, &vbo_color);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(float)*colors.size(), colors.data(), GL_STATIC_DRAW);
+			std::cout << "Creating mesh... ";
+			{
+				unsigned pos = mesh.add_stream();
+				unsigned color = mesh.add_stream();
+				
+				mesh[pos].type = GL_FLOAT;
+				mesh[pos].buffer_type = GL_ARRAY_BUFFER;
+				mesh[pos].components = 2;
+				mesh[pos].normalized = 0;
+				mesh[pos].index = 0; //TODO
+				
+				mesh[pos].data <<
+					std::cos(degtorad(  0.0f)) << std::sin(degtorad(  0.0f)) << 
+					std::cos(degtorad(120.0f)) << std::sin(degtorad(120.0f)) << 
+					std::cos(degtorad(240.0f)) << std::sin(degtorad(240.0f));
+					
+				//
+				
+				mesh[color].type = GL_FLOAT;
+				mesh[color].buffer_type = GL_ARRAY_BUFFER;
+				mesh[color].components = 3;
+				mesh[color].normalized = 0;
+				mesh[color].index = 1;
+				
+				mesh[color].data << 
+					1.0f << 0.0f << 0.0f << 
+					0.0f << 1.0f << 0.0f << 
+					0.0f << 0.0f << 1.0f;
+					
+				mesh.upload();
+			}
 			std::cout << "Done" << std::endl;
 			
 			//Shaders
-			glGenVertexArrays(1, &vao);
-			glBindVertexArray(vao);
-			
 			std::cout << "Compiling shaders... ";
 			program.create();
 			
@@ -130,7 +152,8 @@ class window_triangle: public window
 			program.use();
 			
 			//Link attribs
-			glBindBuffer(GL_ARRAY_BUFFER, vbo);
+			mesh.bind();
+			/*glBindBuffer(GL_ARRAY_BUFFER, vbo);
 			GLint attrib_pos = glGetAttribLocation(program.handle(), "inPosition");
 			glEnableVertexAttribArray(attrib_pos);
 			glVertexAttribPointer(attrib_pos, 2, GL_FLOAT, 0, 0, NULL);
@@ -138,7 +161,7 @@ class window_triangle: public window
 			glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
 			GLint attrib_col = glGetAttribLocation(program.handle(), "inColor");
 			glEnableVertexAttribArray(attrib_col);
-			glVertexAttribPointer(attrib_col, 3, GL_FLOAT, 0, 0, NULL);
+			glVertexAttribPointer(attrib_col, 3, GL_FLOAT, 0, 0, NULL);*/
 			
 			std::cout << "Ready to use" << std::endl;
 		}
@@ -156,7 +179,8 @@ class window_triangle: public window
 			matRot = glm::rotate(matRot, angle, glm::vec3(0.0, 0.0, 1.0));
 			int u = glGetUniformLocation(program.handle(), "uMVP");
 			glUniformMatrix4fv(u, 1, 0, glm::value_ptr(matRot));
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			//glDrawArrays(GL_TRIANGLES, 0, 3);
+			mesh.draw();
 			
 			glfwSwapBuffers(this->handle());
 			
