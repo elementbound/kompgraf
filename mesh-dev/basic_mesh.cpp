@@ -4,12 +4,13 @@
 basic_mesh::basic_mesh()
 {
 	m_VAO = 0;
+	draw_mode = GL_TRIANGLES;
+	storage_policy = GL_STATIC_DRAW;
 }
 
 basic_mesh::~basic_mesh()
 {
 	glDeleteVertexArrays(1, &m_VAO);
-	std::cout << "Released VAO#" << m_VAO << std::endl;
 }
 
 unsigned basic_mesh::add_stream()

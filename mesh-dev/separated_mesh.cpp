@@ -57,41 +57,18 @@ void separated_mesh::upload()
 		}
 		
 		glBindBuffer(p.second.buffer_type, m_VBOs[p.first]);
-		glBufferData(p.second.buffer_type, p.second.data.size(), p.second.data.data(), GL_STATIC_DRAW);
+		glBufferData(p.second.buffer_type, p.second.data.size(), p.second.data.data(), this->storage_policy);
 	}
 }
 
 void separated_mesh::bind()
 {
 	if(m_VAO == 0)
-	{
 		glGenVertexArrays(1, &m_VAO);
-		std::cout << "Acquired VAO#" << m_VAO << std::endl;
-	}
 	
 	glBindVertexArray(m_VAO);
 	for(auto& p : m_Streams)
 	{
-		/*
-		struct stream_data
-		{
-			unsigned index; 
-			GLenum type;
-			GLenum buffer_type;
-			unsigned components;
-			bool normalized;
-			
-			buffer data;
-		};
-		
-		void glVertexAttribPointer( 	
-			GLuint index,
-			GLint size,
-			GLenum type,
-			GLboolean normalized,
-			GLsizei stride,
-			const GLvoid * pointer);
-		*/
 		glBindBuffer(p.second.buffer_type, m_VBOs[p.first]);
 		glEnableVertexAttribArray(p.second.index);
 		glVertexAttribPointer(p.second.index, p.second.components, p.second.type, p.second.normalized, 0, 0);
@@ -108,5 +85,5 @@ void separated_mesh::draw()
 	vertex_count  = sd.data.size() / (sd.components * gl_type_size(sd.type));
 	
 	glBindVertexArray(m_VAO);
-	glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+	glDrawArrays(draw_mode, 0, vertex_count);
 }

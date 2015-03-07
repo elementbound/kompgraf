@@ -20,7 +20,9 @@ class basic_mesh
 			buffer data;
 		};
 		
-		//TODO: implement
+		GLenum draw_mode;
+		GLenum storage_policy;
+		
 		basic_mesh();
 		basic_mesh(const basic_mesh&) = delete;
 		~basic_mesh();

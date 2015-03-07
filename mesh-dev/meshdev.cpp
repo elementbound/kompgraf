@@ -60,13 +60,7 @@ std::string read_file(const std::string& fname)
 class window_triangle: public window
 {
 	private:
-		std::vector<float> vertices;
-		std::vector<float> colors;
-		GLuint vbo;
-		GLuint vbo_color;
-		GLuint vao;
 		shader_program program;
-		
 		separated_mesh mesh;
 		
 	protected: 
@@ -85,23 +79,15 @@ class window_triangle: public window
 				std::cerr << "OpenGL 3.3 not supported" << std::endl;
 				return; 
 			}
-		
-			vertices = {
-				std::cos(degtorad(  0.0f)), std::sin(degtorad(  0.0f)), 
-				std::cos(degtorad(120.0f)), std::sin(degtorad(120.0f)), 
-				std::cos(degtorad(240.0f)), std::sin(degtorad(240.0f)) 
-			};
-			
-			colors = {
-				1.0, 0.0, 0.0, 
-				0.0, 1.0, 0.0, 
-				0.0, 0.0, 1.0
-			};
 			
 			std::cout << "Creating mesh... ";
 			{
+				mesh.draw_mode = GL_TRIANGLE_FAN;
+				mesh.storage_policy = GL_STATIC_DRAW;
+				
 				unsigned pos = mesh.add_stream();
 				unsigned color = mesh.add_stream();
+				unsigned indices = mesh.add_stream();
 				
 				mesh[pos].type = GL_FLOAT;
 				mesh[pos].buffer_type = GL_ARRAY_BUFFER;
@@ -111,8 +97,9 @@ class window_triangle: public window
 				
 				mesh[pos].data <<
 					std::cos(degtorad(  0.0f)) << std::sin(degtorad(  0.0f)) << 
-					std::cos(degtorad(120.0f)) << std::sin(degtorad(120.0f)) << 
-					std::cos(degtorad(240.0f)) << std::sin(degtorad(240.0f));
+					std::cos(degtorad( 90.0f)) << std::sin(degtorad( 90.0f)) << 
+					std::cos(degtorad(180.0f)) << std::sin(degtorad(180.0f)) << 
+					std::cos(degtorad(270.0f)) << std::sin(degtorad(270.0f));
 					
 				//
 				
@@ -125,6 +112,7 @@ class window_triangle: public window
 				mesh[color].data << 
 					1.0f << 0.0f << 0.0f << 
 					0.0f << 1.0f << 0.0f << 
+					0.0f << 0.5f << 0.5f << 
 					0.0f << 0.0f << 1.0f;
 					
 				mesh.upload();
@@ -153,15 +141,6 @@ class window_triangle: public window
 			
 			//Link attribs
 			mesh.bind();
-			/*glBindBuffer(GL_ARRAY_BUFFER, vbo);
-			GLint attrib_pos = glGetAttribLocation(program.handle(), "inPosition");
-			glEnableVertexAttribArray(attrib_pos);
-			glVertexAttribPointer(attrib_pos, 2, GL_FLOAT, 0, 0, NULL);
-			
-			glBindBuffer(GL_ARRAY_BUFFER, vbo_color);
-			GLint attrib_col = glGetAttribLocation(program.handle(), "inColor");
-			glEnableVertexAttribArray(attrib_col);
-			glVertexAttribPointer(attrib_col, 3, GL_FLOAT, 0, 0, NULL);*/
 			
 			std::cout << "Ready to use" << std::endl;
 		}
@@ -186,11 +165,6 @@ class window_triangle: public window
 			
 			if(glfwGetKey(this->handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
 				glfwSetWindowShouldClose(this->handle(), 1);
-		}
-		
-		void on_close()
-		{
-			glDeleteBuffers(1, &vbo);
 		}
 };
 
