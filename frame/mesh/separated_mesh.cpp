@@ -1,5 +1,4 @@
 #include "separated_mesh.h"
-#include <iostream>
 
 inline unsigned gl_type_size(GLenum type)
 {

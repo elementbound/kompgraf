@@ -10,11 +10,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <iterator> //istream_iterator
-#include <cmath>
-
-double degtorad(double deg){return deg/180.0*3.14159265;}
-float degtorad(float deg){return deg/180.0f*3.14159265f;}
 
 void error_callback(int error, const char* error_str)
 {
@@ -96,10 +91,10 @@ class window_triangle: public window
 				mesh[pos].name = "vertexPosition";
 				
 				mesh[pos].data <<
-					std::cos(degtorad(  0.0f)) << std::sin(degtorad(  0.0f)) << 
-					std::cos(degtorad( 90.0f)) << std::sin(degtorad( 90.0f)) << 
-					std::cos(degtorad(180.0f)) << std::sin(degtorad(180.0f)) << 
-					std::cos(degtorad(270.0f)) << std::sin(degtorad(270.0f));
+					std::cos(glm::radians(  0.0f)) << std::sin(glm::radians(  0.0f)) << 
+					std::cos(glm::radians( 90.0f)) << std::sin(glm::radians( 90.0f)) << 
+					std::cos(glm::radians(180.0f)) << std::sin(glm::radians(180.0f)) << 
+					std::cos(glm::radians(270.0f)) << std::sin(glm::radians(270.0f));
 					
 				//
 				
