@@ -103,7 +103,7 @@ class editable_poly
 				m_ControlMesh.bind();
 			}
 			
-			build_bezier(detail);
+			build_bezier(detail, wire_detail);
 		}
 		
 		glm::vec3 eval_bezier(float u, float v)
@@ -118,7 +118,7 @@ class editable_poly
 			return p;
 		}
 		
-		void build_bezier(unsigned detail)
+		void build_bezier(unsigned detail, unsigned wire_detail)
 		{
 			m_EvalMesh.clear_streams();
 			m_EvalMesh.storage_policy = GL_DYNAMIC_DRAW;
@@ -205,6 +205,52 @@ class editable_poly
 				diffuse_shader->use();
 				m_EvalMesh.bind();
 			}
+			
+			//=================================================================================
+			
+			m_WireMesh.clear_streams();
+			m_WireMesh.storage_policy = GL_DYNAMIC_DRAW;
+			m_WireMesh.draw_mode = GL_LINES;
+			
+			pos = m_WireMesh.add_stream();
+			m_WireMesh[pos].type = GL_FLOAT;
+			m_WireMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+			m_WireMesh[pos].components = 3;
+			m_WireMesh[pos].normalized = 0;
+			m_WireMesh[pos].name = "vertexPosition";
+			
+			//Rows
+			for(unsigned row = 0; row < wire_detail; row++)
+			{
+				for(unsigned x=0; x+1<=detail; x++)
+				{
+					float u[2] = {x/(float)detail, (x+1)/(float)detail};
+					float v = row/(float)(wire_detail-1);
+					m_WireMesh[pos].data << this->eval_bezier(u[0], v);
+					m_WireMesh[pos].data << this->eval_bezier(u[1], v);
+				}
+			}
+			
+			//Columns
+			for(unsigned column = 0; column < wire_detail; column++)
+			{
+				for(unsigned y=0; y+1<=detail; y++)
+				{
+					float u = column/(float)(wire_detail-1);
+					float v[2] = {y/(float)detail, (y+1)/(float)detail};
+					m_WireMesh[pos].data << this->eval_bezier(u, v[0]);
+					m_WireMesh[pos].data << this->eval_bezier(u, v[1]);
+				}
+			}
+			
+			//
+			
+			m_WireMesh.upload();
+			if(wireframe_shader != NULL)
+			{
+				wireframe_shader->use();
+				m_WireMesh.bind();
+			}
 		};
 		
 		void draw(glm::mat4 matView, glm::mat4 matProj)
@@ -226,8 +272,8 @@ class editable_poly
 				
 				wireframe_shader->use();
 				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
-				m_ControlMesh.draw();
-				//m_WireMesh.draw();
+				//m_ControlMesh.draw();
+				m_WireMesh.draw();
 			}
 		}
 };
@@ -307,7 +353,7 @@ class window_surface: public window
 			m_Poly.diffuse_shader = &m_DiffuseShader;
 			m_Poly.resize(4,4, 2.0, 8.0);
 			
-			m_Poly.build(32, 4);
+			m_Poly.build(32, 8);
 			
 			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
 			m_CameraRot = glm::vec2(glm::radians(45.0f), glm::radians(45.0f));
