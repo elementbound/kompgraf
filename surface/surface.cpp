@@ -260,18 +260,24 @@ class editable_poly
 				glEnable(GL_DEPTH_TEST);
 				
 				diffuse_shader->use();
-				diffuse_shader->set_uniform("uModelView", matView); //glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uModelView"), 1, 0, glm::value_ptr(matView));
-				diffuse_shader->set_uniform("uProjection", matProj); //glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uProjection"), 1, 0, glm::value_ptr(matProj));
-				diffuse_shader->set_uniform("uLightDir", glm::vec3(0.707f, 0.707f, 0.0f)); //glUniform3f(glGetUniformLocation(diffuse_shader->handle(), "uLightDir"), 0.707f,0.707f, 0.0f);
+				diffuse_shader->set_uniform("uModelView", matView); 
+				diffuse_shader->set_uniform("uProjection", matProj); 
+				diffuse_shader->set_uniform("uLightDir", glm::vec3(0.707f, 0.707f, 0.0f)); 
 				m_EvalMesh.draw();
 			}
 			
 			if(wireframe_shader != NULL)
 			{
-				glDisable(GL_DEPTH_TEST);
-				
 				wireframe_shader->use();
-				wireframe_shader->set_uniform("uMVP", matProj * matView); //glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
+				wireframe_shader->set_uniform("uMVP", matProj * matView); 
+				
+				glDisable(GL_DEPTH_TEST);
+				wireframe_shader->set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.25f));
+				//m_ControlMesh.draw();
+				m_WireMesh.draw();
+				
+				glEnable(GL_DEPTH_TEST);
+				wireframe_shader->set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
 				//m_ControlMesh.draw();
 				m_WireMesh.draw();
 			}
@@ -326,6 +332,8 @@ class window_surface: public window
 			glClearColor(1.0, 1.0, 1.0, 1.0);
 			glClearDepth(1.0);
 			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			
 			//Shaders
 			std::cout << "Compiling shaders... ";
