@@ -12,6 +12,9 @@ const char* gl_error_str(GLenum err);
 glm::vec2 dirvec(float dir);
 glm::vec3 dirvec(float dir, float pitch);
 
+double fac(int x);
+double combi(int n, int k);
+
 buffer& operator<<(buffer&, const glm::vec3&);
 
 #endif

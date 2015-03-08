@@ -10,6 +10,7 @@
 #include "frame/mesh.h"
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <cmath>
@@ -105,15 +106,79 @@ class editable_poly
 		
 		void build_bezier(unsigned detail)
 		{
+			m_EvalMesh.clear_streams();
+			m_EvalMesh.storage_policy = GL_DYNAMIC_DRAW;
+			m_EvalMesh.draw_mode = GL_LINES;
+			
+			unsigned pos = m_EvalMesh.add_stream();
+			m_EvalMesh[pos].type = GL_FLOAT;
+			m_EvalMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+			m_EvalMesh[pos].components = 3;
+			m_EvalMesh[pos].normalized = 0;
+			m_EvalMesh[pos].name = "vertexPosition";
+			
+			static std::map<std::pair<unsigned,unsigned>, glm::vec3> eval_map;
+			
+			for(unsigned y=0; y<detail; y++)
+			{
+				for(unsigned x=0; x<detail; x++)
+				{
+					float u = x/float(detail-1);
+					float v = y/float(detail-1);
+					
+					glm::vec3 p = glm::vec3(0.0f);
+					
+					for(unsigned i=0; i<m_PointRows; i++)
+						for(unsigned j=0; j<m_PointColumns; j++)
+							p += float(std::pow(u,j)*std::pow(1.0f-u, m_PointColumns-1-j)*combi(m_PointColumns-1, j)) * 
+								 float(std::pow(v,i)*std::pow(1.0f-v, m_PointRows-1-i)*combi(m_PointRows-1, i))* m_PointMatrix[hash(j,i)];
+								 
+					eval_map.insert({{x,y}, p});
+				}
+			}
+			
+			for(unsigned y=0; y<detail; y++)
+			{
+				for(unsigned x=0; x<detail; x++)
+				{
+					if(x+1 < detail)
+					{
+						m_EvalMesh[pos].data << eval_map[{x  ,y}];
+						m_EvalMesh[pos].data << eval_map[{x+1,y}];
+					}
+					
+					if(y+1 < detail)
+					{
+						m_EvalMesh[pos].data << eval_map[{x,y  }];
+						m_EvalMesh[pos].data << eval_map[{x,y+1}];
+					}
+				}
+			}
+			
+			eval_map.clear();
+			
+			m_EvalMesh.upload();
+			if(diffuse_shader != NULL)
+			{
+				diffuse_shader->use();
+				m_EvalMesh.bind();
+			}
 		};
 		
 		void draw(glm::mat4 matVP)
 		{
-			if(wireframe_shader != NULL)
+			/*if(wireframe_shader != NULL)
 			{
 				wireframe_shader->use();
 				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matVP));
 				m_WireMesh.draw();
+			}*/
+			
+			if(diffuse_shader != NULL)
+			{
+				diffuse_shader->use();
+				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matVP));
+				m_EvalMesh.draw();
 			}
 		}
 };
@@ -183,10 +248,10 @@ class window_surface: public window
 			std::cout << "Ready to use" << std::endl;
 			
 			m_Poly.wireframe_shader = &m_WireShader;
-			m_Poly.diffuse_shader = &m_DiffuseShader;
-			m_Poly.resize(4,4, 2.0, 2.0);
+			m_Poly.diffuse_shader = &m_WireShader;//&m_DiffuseShader;
+			m_Poly.resize(4,4, 2.0, 8.0);
 			
-			m_Poly.build(512);
+			m_Poly.build(32);
 			
 			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
 		}

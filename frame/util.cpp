@@ -1,6 +1,7 @@
 #include "util.h"
 #include <cmath>
 #include <fstream>
+#include <iostream>
 
 std::string read_file(const std::string& fname)
 {
@@ -59,4 +60,34 @@ buffer& operator<<(buffer& b, const glm::vec3& v)
 {
 	b << v.x << v.y << v.z;
 	return b;
+}
+
+double fac(int x)
+{
+    static double* cache = NULL;
+    static size_t cache_size = 0;
+    static const size_t cache_step = 32;
+
+    if(x <= 0)
+        return 1;
+
+    if(x >= int(cache_size))
+    {
+        delete [] cache;
+        cache_size = (x/cache_step + 2)*cache_step;
+        cache = new double[cache_size];
+        cache[0] = 1.0;
+
+        std::cout << "[fac]Freeing cache, recalculating till " << cache_size << std::endl;
+
+        for(unsigned i=1; i<cache_size; i++)
+            cache[i] = cache[i-1]*i;
+    }
+
+    return cache[x];
+}
+
+double combi(int n, int k)
+{
+    return fac(n) / (fac(k)*fac(n-k));
 }
