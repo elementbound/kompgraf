@@ -235,7 +235,12 @@ class window_surface: public window
 		glm::mat4	m_View;
 		glm::mat4	m_Projection;
 		glm::vec2	m_Mouse;
+		
 		glm::vec3	m_CameraAt;
+		glm::vec2	m_CameraRot;
+		float		m_CameraDst;
+		bool		m_CameraGrabbed;
+		glm::vec2	m_CameraGrabAt;
 		
 		int m_Width, m_Height;
 		
@@ -298,6 +303,8 @@ class window_surface: public window
 			m_Poly.build(32);
 			
 			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
+			m_CameraRot = glm::vec2(glm::radians(45.0f), glm::radians(45.0f));
+			m_CameraDst = 6.0f;
 		}
 		
 		void on_fbresize(int w, int h)
@@ -313,24 +320,60 @@ class window_surface: public window
 			glLoadMatrixf(glm::value_ptr(m_Projection));
 		}
 		
+		void on_mousebutton(int button, int action, int mods)
+		{
+			if(button == GLFW_MOUSE_BUTTON_RIGHT)
+			{
+				if(action == GLFW_PRESS)
+				{
+					m_CameraGrabbed = 1;
+					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+					m_CameraGrabAt = m_Mouse;
+				}
+				else if(action == GLFW_RELEASE)
+				{
+					m_CameraGrabbed = 0;
+					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				}
+			}
+		}
+		
+		void on_mousepos(double x, double y)
+		{
+			m_Mouse = glm::vec2(x,y);
+			if(m_CameraGrabbed)
+			{
+				glm::vec2 delta = m_CameraGrabAt - m_Mouse;
+				m_CameraRot.x -= delta.y / 64.0f;
+				m_CameraRot.y -= delta.x / 64.0f;
+				
+				m_CameraGrabAt = m_Mouse;
+			}
+		}
+		
+		void on_mousescroll(double x, double y)
+		{
+			if(y > 0.0)
+				m_CameraDst *= std::pow(2.0, 1.0/8.0);
+			else 
+				m_CameraDst /= std::pow(2.0, 1.0/8.0);
+		}
+		
 		void on_refresh()
 		{
-			static float f = 0.0;
-			static float angle = 0.0;
-			f = std::fmod(glfwGetTime(), 8.0f)/8.0f;
-			angle = glm::radians(f*360.0f);
+			//Update
+			if(glfwGetKey(this->handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
+				glfwSetWindowShouldClose(this->handle(), 1);
 			
+			//Draw
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
-			m_CameraAt = dirvec(angle, glm::radians(45.0f))*4.0f;
+			m_CameraAt = dirvec(m_CameraRot.y, m_CameraRot.x) * m_CameraDst;
 			m_View = glm::lookAt(m_CameraAt, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
 			
 			m_Poly.draw(m_View,m_Projection);
 			
 			glfwSwapBuffers(this->handle());
-			
-			if(glfwGetKey(this->handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
-				glfwSetWindowShouldClose(this->handle(), 1);
 		}
 };
 
