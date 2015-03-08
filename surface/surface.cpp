@@ -260,9 +260,9 @@ class editable_poly
 				glEnable(GL_DEPTH_TEST);
 				
 				diffuse_shader->use();
-				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uModelView"), 1, 0, glm::value_ptr(matView));
-				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uProjection"), 1, 0, glm::value_ptr(matProj));
-				glUniform3f(glGetUniformLocation(diffuse_shader->handle(), "uLightDir"), 0.707f,0.707f, 0.0f);
+				diffuse_shader->set_uniform("uModelView", matView); //glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uModelView"), 1, 0, glm::value_ptr(matView));
+				diffuse_shader->set_uniform("uProjection", matProj); //glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uProjection"), 1, 0, glm::value_ptr(matProj));
+				diffuse_shader->set_uniform("uLightDir", glm::vec3(0.707f, 0.707f, 0.0f)); //glUniform3f(glGetUniformLocation(diffuse_shader->handle(), "uLightDir"), 0.707f,0.707f, 0.0f);
 				m_EvalMesh.draw();
 			}
 			
@@ -271,7 +271,7 @@ class editable_poly
 				glDisable(GL_DEPTH_TEST);
 				
 				wireframe_shader->use();
-				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
+				wireframe_shader->set_uniform("uMVP", matProj * matView); //glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
 				//m_ControlMesh.draw();
 				m_WireMesh.draw();
 			}

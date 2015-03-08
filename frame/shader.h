@@ -2,6 +2,7 @@
 #define _H_SHADER_H_
 
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
 
@@ -37,7 +38,25 @@ class shader_program
 		void link();
 		void use();
 		
-		GLuint handle();
+		int  uniform(const char* name) const;
+		int  uniform(const std::string& name) const;
+		
+		void set_uniform(int loc, glm::vec2 value) const;
+		void set_uniform(int loc, glm::vec3 value) const;
+		void set_uniform(int loc, glm::vec4 value) const;
+		void set_uniform(int loc, glm::mat4 value) const;
+		
+		void set_uniform(const char* name, glm::vec2 value) const;
+		void set_uniform(const char* name, glm::vec3 value) const;
+		void set_uniform(const char* name, glm::vec4 value) const;
+		void set_uniform(const char* name, glm::mat4 value) const;
+		
+		void set_uniform(const std::string& name, glm::vec2 value) const;
+		void set_uniform(const std::string& name, glm::vec3 value) const;
+		void set_uniform(const std::string& name, glm::vec4 value) const;
+		void set_uniform(const std::string& name, glm::mat4 value) const;
+		
+		GLuint handle() const;
 };
 
 #endif
