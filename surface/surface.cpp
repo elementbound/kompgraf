@@ -23,29 +23,53 @@ void error_callback(int error, const char* error_str)
 	std::cerr << "[" << error << "]" << error_str << std::endl;
 }
 
-void glcCircle(float x, float y, float r, bool outline, unsigned detail = 16)
+class drawCircles
 {
-	//TODO: How about generating one circle and transforming that
-	static separated_mesh circle;
-	
-	circle.clear_streams();
-	circle.storage_policy = GL_STREAM_DRAW;
-	circle.draw_mode = outline ? GL_LINE_LOOP : GL_TRIANGLE_FAN;
-	
-	unsigned pos = circle.add_stream();
-	circle[pos].type = GL_FLOAT;
-	circle[pos].buffer_type = GL_ARRAY_BUFFER;
-	circle[pos].components = 2;
-	circle[pos].normalized = 0;
-	circle[pos].name = "vertexPosition";
-	
-	for(unsigned i=0; i<detail; i++)
-		circle[pos].data << (glm::vec2(x,y) + r * dirvec(glm::two_pi<float>() * (i/float(detail))));
-	
-	circle.upload();
-	circle.bind();
-	circle.draw();
-}
+	private: 
+		static separated_mesh m_Mesh;
+		static unsigned pos;
+		
+	public: 
+		static void begin(bool outline)
+		{
+			m_Mesh.clear_streams();
+			m_Mesh.storage_policy = GL_STREAM_DRAW;
+			m_Mesh.draw_mode = GL_LINES;
+			
+			pos = m_Mesh.add_stream();
+			m_Mesh[pos].type = GL_FLOAT;
+			m_Mesh[pos].buffer_type = GL_ARRAY_BUFFER;
+			m_Mesh[pos].components = 2;
+			m_Mesh[pos].normalized = 0;
+			m_Mesh[pos].name = "vertexPosition";
+		}
+		
+		static void add_circle(float x, float y, float r, unsigned detail = 16)
+		{
+			for(unsigned i=0; i<detail; i++)
+			{
+				m_Mesh[pos].data << (glm::vec2(x,y) + r * dirvec(glm::two_pi<float>() * (i/float(detail))));
+				m_Mesh[pos].data << (glm::vec2(x,y) + r * dirvec(glm::two_pi<float>() * ((i+1)/float(detail))));
+			}
+		}
+		
+		static void single_circle(float x, float y, float r, bool outline, unsigned detail = 16)
+		{
+			begin(outline);
+			add_circle(x,y,r, detail);
+			end();
+		}
+		
+		static void end()
+		{
+			m_Mesh.upload();
+			m_Mesh.bind();
+			m_Mesh.draw();
+		}
+};
+
+separated_mesh 	drawCircles::m_Mesh;
+unsigned 		drawCircles::pos;
 
 class editable_poly
 {
@@ -357,11 +381,13 @@ class editable_poly
 				wireframe_shader->set_uniform("uMVP", matOrtho);
 				wireframe_shader->set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 				
+				drawCircles::begin(1);
 				for(glm::vec3& p: m_PointMatrix)
 				{
 					glm::vec3 projected = glm::project(p, matView, matPerspective, glm::vec4(viewport[0], viewport[1], viewport[2], viewport[3]));
-					glcCircle(projected.x, projected.y, 4, 1);
+					drawCircles::add_circle(projected.x, projected.y, 4);//glcCircle(projected.x, projected.y, 4, 1);
 				}
+				drawCircles::end();
 			}
 		}
 };
@@ -381,13 +407,16 @@ class window_surface: public window
 		glm::vec3	m_CameraAt;
 		glm::vec2	m_CameraRot;
 		float		m_CameraDst;
-		bool		m_CameraGrabbed;
+		bool		m_CameraGrabbed = 0;
 		glm::vec2	m_CameraGrabAt;
 		
 		int m_Width, m_Height;
 		
 		editable_poly	m_Poly;
 		bool 			m_Editing = 0;
+		unsigned		m_FullQuality = 32;
+		unsigned		m_EditQuality = 8;
+		unsigned		m_GridDensity = 8;
 		
 	protected: 
 		void on_open()
@@ -445,7 +474,7 @@ class window_surface: public window
 			m_Poly.diffuse_shader = &m_DiffuseShader;
 			m_Poly.resize(4,4, 2.0, 2.0);
 			
-			m_Poly.build(32, 8);
+			m_Poly.build(m_FullQuality, m_GridDensity);
 			
 			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
 			m_CameraRot = glm::vec2(glm::radians(45.0f), glm::radians(45.0f));
@@ -494,11 +523,12 @@ class window_surface: public window
 				}
 				else if(action == GLFW_RELEASE)
 				{
+					if(m_Editing)
+						m_Poly.build(m_FullQuality, m_GridDensity);
+					
 					m_Poly.ungrab();
 					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 					m_Editing = 0;
-					
-					m_Poly.build(32,8);
 				}
 			}
 		}
@@ -533,7 +563,7 @@ class window_surface: public window
 			if(m_Editing)
 			{
 				m_Poly.edit(m_Mouse, m_View, m_Perspective);
-				m_Poly.build(16,8);
+				m_Poly.build(m_EditQuality, m_GridDensity);
 			}
 			
 			//Draw
@@ -546,7 +576,7 @@ class window_surface: public window
 			
 			m_WireShader.use();
 			m_WireShader.set_uniform("uMVP", m_Ortho);
-			glcCircle(m_Mouse.x, m_Mouse.y, 4, 1);
+			//glcCircle(m_Mouse.x, m_Mouse.y, 4, 1);
 			
 			glfwSwapBuffers(this->handle());
 		}
