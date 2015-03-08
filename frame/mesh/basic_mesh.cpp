@@ -22,9 +22,19 @@ unsigned basic_mesh::add_stream()
 	return nid;
 }
 
+void basic_mesh::clear_streams()
+{
+	m_Streams.clear();
+}
+
 bool basic_mesh::remove_stream(unsigned id)
 {
 	return m_Streams.erase(id);
+}
+
+unsigned basic_mesh::stream_count() const
+{
+	return m_Streams.size();
 }
 
 basic_mesh::stream_data& basic_mesh::get_stream(unsigned id)

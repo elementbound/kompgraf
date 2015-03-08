@@ -30,12 +30,15 @@ class basic_mesh
 		basic_mesh& operator=(const basic_mesh&) = delete;
 	
 		unsigned add_stream();
+		void	 clear_streams();
 		bool     remove_stream(unsigned id);
 		
 		stream_data& get_stream(unsigned id);
 		const stream_data& get_stream(unsigned id) const;
 		stream_data& operator[](unsigned id);
 		const stream_data& operator[](unsigned id) const;
+		
+		unsigned stream_count() const;
 		
 		virtual void upload() = 0;
 		virtual void bind() = 0;
