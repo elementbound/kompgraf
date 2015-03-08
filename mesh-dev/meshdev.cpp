@@ -5,7 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "frame/window.h"
 #include "frame/shader.h"
-#include "mesh.h"
+#include "frame/mesh.h"
 
 #include <iostream>
 #include <fstream>
@@ -112,8 +112,8 @@ class window_triangle: public window
 				mesh[color].data << 
 					1.0f << 0.0f << 0.0f << 
 					0.0f << 1.0f << 0.0f << 
-					0.0f << 0.5f << 0.5f << 
-					0.0f << 0.0f << 1.0f;
+					0.0f << 0.0f << 1.0f << 
+					1.0f << 1.0f << 1.0f;
 					
 				mesh.upload();
 			}
