@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/io.hpp>
 #include "frame/util.h"
 #include "frame/window.h"
 #include "frame/shader.h"
@@ -29,11 +30,15 @@ class editable_poly
 		separated_mesh			m_ControlMesh;
 		separated_mesh			m_WireMesh;
 		
-	public: 
-		shader*	diffuse_shader; 
-		shader* wireframe_shader;
+		unsigned hash(unsigned x, unsigned y) const {
+			return y*m_PointColumns + x;
+		}
 		
-		void resize(unsigned rows, unsigned cols, float spacing, float height)
+	public: 
+		shader_program*	diffuse_shader; 
+		shader_program* wireframe_shader;
+		
+		void resize(unsigned rows, unsigned cols, float size, float height)
 		{
 			m_PointRows = rows;
 			m_PointColumns = cols;
@@ -44,34 +49,90 @@ class editable_poly
 				for(unsigned x = 0; x < m_PointColumns; x++)
 				{
 					float u, v, z;
-					u = x/(float)m_PointColumns;
-					v = y/(float)m_PointRows;
+					u = x/(float)(m_PointColumns-1);
+					v = y/(float)(m_PointRows-1);
 					
 					u = (u-0.5f)*2.0f;
 					v = (v-0.5f)*2.0f;
-					z = std::pow(u, 2) * std::pow(v, 2) * height;
+					z = std::pow(1.0f-std::abs(u), 2) * std::pow(1.0f-std::abs(v), 2) * height;
 					
-					m_PointMatrix[y*m_PointRows + x] = glm::vec3(u*spacing, v*spacing, z);
+					m_PointMatrix[hash(x,y)] = glm::vec3(u*size, v*size, z);
 				}
 			}
 		}
 		
 		void build(unsigned detail)
 		{
+			m_WireMesh.clear_streams();
+			m_WireMesh.storage_policy = GL_DYNAMIC_DRAW;
+			m_WireMesh.draw_mode = GL_LINES;
 			
+			unsigned pos = m_WireMesh.add_stream();
+			m_WireMesh[pos].type = GL_FLOAT;
+			m_WireMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+			m_WireMesh[pos].components = 3;
+			m_WireMesh[pos].normalized = 0;
+			m_WireMesh[pos].name = "vertexPosition";
+			
+			for(unsigned y=0; y<m_PointRows; y++)
+			{
+				for(unsigned x=0; x<m_PointColumns; x++)
+				{
+					if(x+1 < m_PointColumns)
+					{
+						m_WireMesh[pos].data << m_PointMatrix[hash(x  , y)];
+						m_WireMesh[pos].data << m_PointMatrix[hash(x+1, y)];
+					}
+					
+					if(y+1 < m_PointRows)
+					{
+						m_WireMesh[pos].data << m_PointMatrix[hash(x, y  )];
+						m_WireMesh[pos].data << m_PointMatrix[hash(x, y+1)];
+					}
+				}
+			}
+			
+			m_WireMesh.upload();
+			
+			if(wireframe_shader != NULL)
+			{
+				wireframe_shader->use();
+				m_WireMesh.bind();
+			}
+			
+			build_bezier(detail);
+		}
+		
+		void build_bezier(unsigned detail)
+		{
+		};
+		
+		void draw(glm::mat4 matVP)
+		{
+			if(wireframe_shader != NULL)
+			{
+				wireframe_shader->use();
+				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matVP));
+				m_WireMesh.draw();
+			}
 		}
 };
 
 class window_surface: public window
 {
 	private:
-		shader_program m_Shader;
+		shader_program m_DiffuseShader;
+		shader_program m_WireShader;
 		
 		double		m_Aspect;
+		glm::mat4	m_View;
 		glm::mat4	m_Projection;
 		glm::vec2	m_Mouse;
+		glm::vec3	m_CameraAt;
 		
 		int m_Width, m_Height;
+		
+		editable_poly	m_Poly;
 		
 	protected: 
 		void on_open()
@@ -97,27 +158,37 @@ class window_surface: public window
 			glfwSetInputMode(this->handle(), GLFW_STICKY_KEYS, GL_TRUE);
 			glfwSetInputMode(this->handle(), GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
 			
+			glClearColor(1.0, 1.0, 1.0, 1.0);
+			
 			//Shaders
 			std::cout << "Compiling shaders... ";
-			m_Shader.create();
+			m_DiffuseShader.create();
+			m_WireShader.create();
 			
-			if(!m_Shader.attach(read_file("data/dirlit.vs").c_str(), shader_program::shader_type::vertex))
-			{
-				std::cerr << "Couldn't attach vertex shader" << std::endl;
+			if(!m_DiffuseShader.attach(read_file("data/dirlit.vs").c_str(), shader_program::shader_type::vertex))
 				return;
-			}
-			
-			if(!m_Shader.attach(read_file("data/dirlit.fs").c_str(), shader_program::shader_type::fragment))
-			{
-				std::cerr << "Couldn't attach fragment shader" << std::endl;
+			if(!m_DiffuseShader.attach(read_file("data/dirlit.fs").c_str(), shader_program::shader_type::fragment))
 				return;
-			}
 			
-			glBindFragDataLocation(m_Shader.handle(), 0, "outColor");
-			m_Shader.link();
-			m_Shader.use();
+			if(!m_WireShader.attach(read_file("data/wireframe.vs").c_str(), shader_program::shader_type::vertex))
+				return;
+			if(!m_WireShader.attach(read_file("data/wireframe.fs").c_str(), shader_program::shader_type::fragment))
+				return;
+			
+			glBindFragDataLocation(m_DiffuseShader.handle(), 0, "outColor");
+			glBindFragDataLocation(m_WireShader.handle(), 0, "outColor");
+			m_DiffuseShader.link();
+			m_WireShader.link();
 			
 			std::cout << "Ready to use" << std::endl;
+			
+			m_Poly.wireframe_shader = &m_WireShader;
+			m_Poly.diffuse_shader = &m_DiffuseShader;
+			m_Poly.resize(4,4, 2.0, 2.0);
+			
+			m_Poly.build(512);
+			
+			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
 		}
 		
 		void on_fbresize(int w, int h)
@@ -129,23 +200,23 @@ class window_surface: public window
 			glViewport(0,0, w,h);
 			
 			glMatrixMode(GL_PROJECTION);
-			m_Projection = glm::ortho(-m_Aspect,m_Aspect, -1.0,1.0);
+			m_Projection = glm::perspective(glm::radians(60.0f), (float)m_Aspect, 1.0f/64.0f, 64.0f);
 			glLoadMatrixf(glm::value_ptr(m_Projection));
 		}
 		
 		void on_refresh()
 		{
 			static float f = 0.0;
-			f += 1.0/256.0;
-			if(f >= 1.0) f -= 2.0f;
+			static float angle = 0.0;
+			f = std::fmod(glfwGetTime(), 8.0f)/8.0f;
+			angle = glm::radians(f*360.0f);
 			
 			glClear(GL_COLOR_BUFFER_BIT);
 			
-			float angle = fmod(glfwGetTime()/4.0, 1.0) * 2.0 * 3.14159265;
-			glm::mat4 matRot;
-			matRot = glm::rotate(matRot, angle, glm::vec3(0.0, 0.0, 1.0));
-			int u = glGetUniformLocation(m_Shader.handle(), "uMVP");
-			glUniformMatrix4fv(u, 1, 0, glm::value_ptr(matRot));
+			m_CameraAt = dirvec(angle, glm::radians(45.0f))*4.0f;
+			m_View = glm::lookAt(m_CameraAt, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
+			
+			m_Poly.draw(m_Projection * m_View);
 			
 			glfwSwapBuffers(this->handle());
 			

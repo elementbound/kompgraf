@@ -1,4 +1,5 @@
 #include "util.h"
+#include <cmath>
 #include <fstream>
 
 std::string read_file(const std::string& fname)
@@ -35,4 +36,27 @@ const char* gl_error_str(GLenum err)
 		default: 
 			return "Say wat?";
 	}
+}
+
+glm::vec2 dirvec(float dir)
+{
+	glm::vec2 ret;
+	ret.x =  std::cos(dir);
+	ret.y = -std::sin(dir);
+	return ret;
+}
+
+glm::vec3 dirvec(float dir, float pitch)
+{
+	glm::vec3 ret;
+	ret.x =  std::cos(dir) * std::cos(pitch);
+	ret.y = -std::sin(dir) * std::cos(pitch);
+	ret.z =  std::sin(pitch);
+	return ret;
+}
+
+buffer& operator<<(buffer& b, const glm::vec3& v)
+{
+	b << v.x << v.y << v.z;
+	return b;
 }
