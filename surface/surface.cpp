@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/noise.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
@@ -56,25 +57,25 @@ class editable_poly
 					
 					u = (u-0.5f)*2.0f;
 					v = (v-0.5f)*2.0f;
-					z = std::pow(1.0f-std::abs(u), 2) * std::pow(1.0f-std::abs(v), 2) * height;
+					z = glm::perlin(glm::vec2(u,v)) * height;//std::pow(1.0f-std::abs(u), 2) * std::pow(1.0f-std::abs(v), 2) * height;
 					
 					m_PointMatrix[hash(x,y)] = glm::vec3(u*size, v*size, z);
 				}
 			}
 		}
 		
-		void build(unsigned detail)
+		void build(unsigned detail, unsigned wire_detail)
 		{
-			m_WireMesh.clear_streams();
-			m_WireMesh.storage_policy = GL_DYNAMIC_DRAW;
-			m_WireMesh.draw_mode = GL_LINES;
+			m_ControlMesh.clear_streams();
+			m_ControlMesh.storage_policy = GL_DYNAMIC_DRAW;
+			m_ControlMesh.draw_mode = GL_LINES;
 			
-			unsigned pos = m_WireMesh.add_stream();
-			m_WireMesh[pos].type = GL_FLOAT;
-			m_WireMesh[pos].buffer_type = GL_ARRAY_BUFFER;
-			m_WireMesh[pos].components = 3;
-			m_WireMesh[pos].normalized = 0;
-			m_WireMesh[pos].name = "vertexPosition";
+			unsigned pos = m_ControlMesh.add_stream();
+			m_ControlMesh[pos].type = GL_FLOAT;
+			m_ControlMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+			m_ControlMesh[pos].components = 3;
+			m_ControlMesh[pos].normalized = 0;
+			m_ControlMesh[pos].name = "vertexPosition";
 			
 			for(unsigned y=0; y<m_PointRows; y++)
 			{
@@ -82,24 +83,24 @@ class editable_poly
 				{
 					if(x+1 < m_PointColumns)
 					{
-						m_WireMesh[pos].data << m_PointMatrix[hash(x  , y)];
-						m_WireMesh[pos].data << m_PointMatrix[hash(x+1, y)];
+						m_ControlMesh[pos].data << m_PointMatrix[hash(x  , y)];
+						m_ControlMesh[pos].data << m_PointMatrix[hash(x+1, y)];
 					}
 					
 					if(y+1 < m_PointRows)
 					{
-						m_WireMesh[pos].data << m_PointMatrix[hash(x, y  )];
-						m_WireMesh[pos].data << m_PointMatrix[hash(x, y+1)];
+						m_ControlMesh[pos].data << m_PointMatrix[hash(x, y  )];
+						m_ControlMesh[pos].data << m_PointMatrix[hash(x, y+1)];
 					}
 				}
 			}
 			
-			m_WireMesh.upload();
+			m_ControlMesh.upload();
 			
 			if(wireframe_shader != NULL)
 			{
 				wireframe_shader->use();
-				m_WireMesh.bind();
+				m_ControlMesh.bind();
 			}
 			
 			build_bezier(detail);
@@ -208,20 +209,25 @@ class editable_poly
 		
 		void draw(glm::mat4 matView, glm::mat4 matProj)
 		{
-			if(wireframe_shader != NULL)
-			{
-				wireframe_shader->use();
-				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
-				m_WireMesh.draw();
-			}
-			
 			if(diffuse_shader != NULL)
 			{
+				glEnable(GL_DEPTH_TEST);
+				
 				diffuse_shader->use();
 				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uModelView"), 1, 0, glm::value_ptr(matView));
 				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uProjection"), 1, 0, glm::value_ptr(matProj));
 				glUniform3f(glGetUniformLocation(diffuse_shader->handle(), "uLightDir"), 0.707f,0.707f, 0.0f);
 				m_EvalMesh.draw();
+			}
+			
+			if(wireframe_shader != NULL)
+			{
+				glDisable(GL_DEPTH_TEST);
+				
+				wireframe_shader->use();
+				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
+				m_ControlMesh.draw();
+				//m_WireMesh.draw();
 			}
 		}
 };
@@ -301,7 +307,7 @@ class window_surface: public window
 			m_Poly.diffuse_shader = &m_DiffuseShader;
 			m_Poly.resize(4,4, 2.0, 8.0);
 			
-			m_Poly.build(32);
+			m_Poly.build(32, 4);
 			
 			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
 			m_CameraRot = glm::vec2(glm::radians(45.0f), glm::radians(45.0f));
