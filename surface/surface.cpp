@@ -22,6 +22,30 @@ void error_callback(int error, const char* error_str)
 	std::cerr << "[" << error << "]" << error_str << std::endl;
 }
 
+void glcCircle(float x, float y, float r, bool outline, unsigned detail = 16)
+{
+	//TODO: How about generating one circle and transforming that
+	static separated_mesh circle;
+	
+	circle.clear_streams();
+	circle.storage_policy = GL_STREAM_DRAW;
+	circle.draw_mode = outline ? GL_LINE_LOOP : GL_TRIANGLE_FAN;
+	
+	unsigned pos = circle.add_stream();
+	circle[pos].type = GL_FLOAT;
+	circle[pos].buffer_type = GL_ARRAY_BUFFER;
+	circle[pos].components = 2;
+	circle[pos].normalized = 0;
+	circle[pos].name = "vertexPosition";
+	
+	for(unsigned i=0; i<detail; i++)
+		circle[pos].data << (glm::vec2(x,y) + r * dirvec(glm::two_pi<float>() * (i/float(detail))));
+	
+	circle.upload();
+	circle.bind();
+	circle.draw();
+}
+
 class editable_poly
 {
 	private: 
@@ -253,7 +277,7 @@ class editable_poly
 			}
 		};
 		
-		void draw(glm::mat4 matView, glm::mat4 matProj)
+		void draw(glm::mat4 matView, glm::mat4 matPerspective, glm::mat4 matOrtho)
 		{
 			if(diffuse_shader != NULL)
 			{
@@ -261,7 +285,7 @@ class editable_poly
 				
 				diffuse_shader->use();
 				diffuse_shader->set_uniform("uModelView", matView); 
-				diffuse_shader->set_uniform("uProjection", matProj); 
+				diffuse_shader->set_uniform("uProjection", matPerspective); 
 				diffuse_shader->set_uniform("uLightDir", glm::vec3(0.707f, 0.707f, 0.0f)); 
 				m_EvalMesh.draw();
 			}
@@ -269,17 +293,31 @@ class editable_poly
 			if(wireframe_shader != NULL)
 			{
 				wireframe_shader->use();
-				wireframe_shader->set_uniform("uMVP", matProj * matView); 
+				wireframe_shader->set_uniform("uMVP", matPerspective * matView); 
 				
 				glDisable(GL_DEPTH_TEST);
 				wireframe_shader->set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.25f));
-				//m_ControlMesh.draw();
+				m_ControlMesh.draw();
 				m_WireMesh.draw();
 				
 				glEnable(GL_DEPTH_TEST);
 				wireframe_shader->set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-				//m_ControlMesh.draw();
+				m_ControlMesh.draw();
 				m_WireMesh.draw();
+				
+				glDisable(GL_DEPTH_TEST);
+				
+				int viewport[4]; //[x,y,w,h]
+				glGetIntegerv(GL_VIEWPORT, viewport);
+				
+				wireframe_shader->set_uniform("uMVP", matOrtho);
+				wireframe_shader->set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+				
+				for(glm::vec3& p: m_PointMatrix)
+				{
+					glm::vec3 projected = glm::project(p, matView, matPerspective, glm::vec4(viewport[0], viewport[1], viewport[2], viewport[3]));
+					glcCircle(projected.x, projected.y, 4, 1);
+				}
 			}
 		}
 };
@@ -292,7 +330,8 @@ class window_surface: public window
 		
 		double		m_Aspect;
 		glm::mat4	m_View;
-		glm::mat4	m_Projection;
+		glm::mat4	m_Perspective;
+		glm::mat4	m_Ortho;
 		glm::vec2	m_Mouse;
 		
 		glm::vec3	m_CameraAt;
@@ -359,7 +398,7 @@ class window_surface: public window
 			
 			m_Poly.wireframe_shader = &m_WireShader;
 			m_Poly.diffuse_shader = &m_DiffuseShader;
-			m_Poly.resize(4,4, 2.0, 8.0);
+			m_Poly.resize(4,4, 2.0, 2.0);
 			
 			m_Poly.build(32, 8);
 			
@@ -376,9 +415,8 @@ class window_surface: public window
 			m_Aspect = (double)m_Width / m_Height;
 			glViewport(0,0, w,h);
 			
-			glMatrixMode(GL_PROJECTION);
-			m_Projection = glm::perspective(glm::radians(60.0f), (float)m_Aspect, 1.0f/64.0f, 64.0f);
-			glLoadMatrixf(glm::value_ptr(m_Projection));
+			m_Perspective = glm::perspective(glm::radians(60.0f), (float)m_Aspect, 1.0f/64.0f, 64.0f);
+			m_Ortho = glm::ortho(0.0f,(float)w, 0.0f,(float)h, -1.0f, 1.0f);
 		}
 		
 		void on_mousebutton(int button, int action, int mods)
@@ -401,11 +439,11 @@ class window_surface: public window
 		
 		void on_mousepos(double x, double y)
 		{
-			m_Mouse = glm::vec2(x,y);
+			m_Mouse = glm::vec2(x,m_Height - y);
 			if(m_CameraGrabbed)
 			{
 				glm::vec2 delta = m_CameraGrabAt - m_Mouse;
-				m_CameraRot.x = glm::clamp(m_CameraRot.x - delta.y / 64.0f, -glm::radians(89.0f), glm::radians(89.0f));
+				m_CameraRot.x = glm::clamp(m_CameraRot.x + delta.y / 64.0f, -glm::radians(89.0f), glm::radians(89.0f));
 				m_CameraRot.y = std::fmod(m_CameraRot.y - delta.x / 64.0f, glm::two_pi<float>());
 				
 				m_CameraGrabAt = m_Mouse;
@@ -432,7 +470,11 @@ class window_surface: public window
 			m_CameraAt = dirvec(m_CameraRot.y, m_CameraRot.x) * m_CameraDst;
 			m_View = glm::lookAt(m_CameraAt, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
 			
-			m_Poly.draw(m_View,m_Projection);
+			m_Poly.draw(m_View, m_Perspective, m_Ortho);
+			
+			m_WireShader.use();
+			m_WireShader.set_uniform("uMVP", m_Ortho);
+			glcCircle(m_Mouse.x, m_Mouse.y, 4, 1);
 			
 			glfwSwapBuffers(this->handle());
 		}

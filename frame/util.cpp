@@ -56,6 +56,12 @@ glm::vec3 dirvec(float dir, float pitch)
 	return ret;
 }
 
+buffer& operator<<(buffer& b, const glm::vec2& v)
+{
+	b << v.x << v.y;
+	return b;
+}
+
 buffer& operator<<(buffer& b, const glm::vec3& v)
 {
 	b << v.x << v.y << v.z;
