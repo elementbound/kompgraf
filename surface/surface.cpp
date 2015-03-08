@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <glm/gtc/noise.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -57,6 +58,9 @@ class editable_poly
 		separated_mesh			m_ControlMesh;
 		separated_mesh			m_WireMesh;
 		
+		int 	m_GrabIndex = -1;
+		float 	m_GrabDepth;
+		
 		unsigned hash(unsigned x, unsigned y) const {
 			return y*m_PointColumns + x;
 		}
@@ -86,6 +90,46 @@ class editable_poly
 					m_PointMatrix[hash(x,y)] = glm::vec3(u*size, v*size, z);
 				}
 			}
+		}
+		
+		int grab(glm::vec2 mouse, glm::mat4 matView, glm::mat4 matPerspective)
+		{
+			m_GrabIndex = -1;
+			
+			int viewport[4]; //[x,y,w,h]
+			glGetIntegerv(GL_VIEWPORT, viewport);
+			
+			for(unsigned i=0; i<m_PointMatrix.size(); i++)
+			{
+				glm::vec3& p = m_PointMatrix[i];
+				glm::vec3 projected = glm::project(p, matView, matPerspective, glm::vec4(viewport[0], viewport[1], viewport[2], viewport[3]));
+				
+				if(glm::distance(projected.xy(), mouse) < 4)
+				{
+					m_GrabIndex = i;
+					m_GrabDepth = projected.z;
+					break;
+				}
+			}
+			
+			return m_GrabIndex;
+		}
+		
+		void edit(glm::vec2 mouse, glm::mat4 matView, glm::mat4 matPerspective)
+		{
+			if(m_GrabIndex < 0)
+				return;
+			
+			int viewport[4]; //[x,y,w,h]
+			glGetIntegerv(GL_VIEWPORT, viewport);
+			
+			glm::vec3 new_pos = glm::unProject(glm::vec3(mouse.x,mouse.y, m_GrabDepth), matView, matPerspective, glm::vec4(viewport[0],viewport[1],viewport[2],viewport[3]));
+			m_PointMatrix[m_GrabIndex] = new_pos;
+		}
+		
+		void ungrab()
+		{
+			m_GrabIndex = -1;
 		}
 		
 		void build(unsigned detail, unsigned wire_detail)
@@ -343,6 +387,7 @@ class window_surface: public window
 		int m_Width, m_Height;
 		
 		editable_poly	m_Poly;
+		bool 			m_Editing = 0;
 		
 	protected: 
 		void on_open()
@@ -421,7 +466,7 @@ class window_surface: public window
 		
 		void on_mousebutton(int button, int action, int mods)
 		{
-			if(button == GLFW_MOUSE_BUTTON_RIGHT)
+			if(button == GLFW_MOUSE_BUTTON_RIGHT && !m_Editing)
 			{
 				if(action == GLFW_PRESS)
 				{
@@ -433,6 +478,27 @@ class window_surface: public window
 				{
 					m_CameraGrabbed = 0;
 					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				}
+			}
+			
+			if(button == GLFW_MOUSE_BUTTON_LEFT && !m_CameraGrabbed)
+			{
+				if(action == GLFW_PRESS)
+				{
+					int grab = m_Poly.grab(m_Mouse, m_View, m_Perspective);
+					if(grab >= 0)
+					{
+						glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+						m_Editing = 1;
+					}
+				}
+				else if(action == GLFW_RELEASE)
+				{
+					m_Poly.ungrab();
+					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+					m_Editing = 0;
+					
+					m_Poly.build(32,8);
 				}
 			}
 		}
@@ -463,6 +529,12 @@ class window_surface: public window
 			//Update
 			if(glfwGetKey(this->handle(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
 				glfwSetWindowShouldClose(this->handle(), 1);
+			
+			if(m_Editing)
+			{
+				m_Poly.edit(m_Mouse, m_View, m_Perspective);
+				m_Poly.build(16,8);
+			}
 			
 			//Draw
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
