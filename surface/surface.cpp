@@ -104,11 +104,23 @@ class editable_poly
 			build_bezier(detail);
 		}
 		
+		glm::vec3 eval_bezier(float u, float v)
+		{
+			glm::vec3 p = glm::vec3(0.0f);
+			
+			for(unsigned i=0; i<m_PointRows; i++)
+				for(unsigned j=0; j<m_PointColumns; j++)
+					p += float(std::pow(u,j)*std::pow(1.0f-u, m_PointColumns-1-j)*combi(m_PointColumns-1, j)) * 
+						 float(std::pow(v,i)*std::pow(1.0f-v, m_PointRows-1-i)*combi(m_PointRows-1, i))* m_PointMatrix[hash(j,i)];
+						 
+			return p;
+		}
+		
 		void build_bezier(unsigned detail)
 		{
 			m_EvalMesh.clear_streams();
 			m_EvalMesh.storage_policy = GL_DYNAMIC_DRAW;
-			m_EvalMesh.draw_mode = GL_LINES;
+			m_EvalMesh.draw_mode = GL_TRIANGLES;
 			
 			unsigned pos = m_EvalMesh.add_stream();
 			m_EvalMesh[pos].type = GL_FLOAT;
@@ -117,7 +129,16 @@ class editable_poly
 			m_EvalMesh[pos].normalized = 0;
 			m_EvalMesh[pos].name = "vertexPosition";
 			
-			static std::map<std::pair<unsigned,unsigned>, glm::vec3> eval_map;
+			unsigned nor = m_EvalMesh.add_stream();
+			m_EvalMesh[nor].type = GL_FLOAT;
+			m_EvalMesh[nor].buffer_type = GL_ARRAY_BUFFER;
+			m_EvalMesh[nor].components = 3;
+			m_EvalMesh[nor].normalized = 0;
+			m_EvalMesh[nor].name = "vertexNormal";
+			
+			float nabla = 1.0f/float(detail-1);
+			static std::map<std::pair<unsigned,unsigned>, glm::vec3> pos_map;
+			static std::map<std::pair<unsigned,unsigned>, glm::vec3> nor_map; //normals
 			
 			for(unsigned y=0; y<detail; y++)
 			{
@@ -125,39 +146,58 @@ class editable_poly
 				{
 					float u = x/float(detail-1);
 					float v = y/float(detail-1);
-					
-					glm::vec3 p = glm::vec3(0.0f);
-					
-					for(unsigned i=0; i<m_PointRows; i++)
-						for(unsigned j=0; j<m_PointColumns; j++)
-							p += float(std::pow(u,j)*std::pow(1.0f-u, m_PointColumns-1-j)*combi(m_PointColumns-1, j)) * 
-								 float(std::pow(v,i)*std::pow(1.0f-v, m_PointRows-1-i)*combi(m_PointRows-1, i))* m_PointMatrix[hash(j,i)];
 								 
-					eval_map.insert({{x,y}, p});
-				}
-			}
-			
-			for(unsigned y=0; y<detail; y++)
-			{
-				for(unsigned x=0; x<detail; x++)
-				{
-					if(x+1 < detail)
-					{
-						m_EvalMesh[pos].data << eval_map[{x  ,y}];
-						m_EvalMesh[pos].data << eval_map[{x+1,y}];
-					}
+					glm::vec3 p_at = this->eval_bezier(u,v);
 					
-					if(y+1 < detail)
-					{
-						m_EvalMesh[pos].data << eval_map[{x,y  }];
-						m_EvalMesh[pos].data << eval_map[{x,y+1}];
-					}
+					glm::vec3 p_west = this->eval_bezier(u-nabla,v);
+					glm::vec3 p_north = this->eval_bezier(u,v-nabla);
+					glm::vec3 p_east = this->eval_bezier(u+nabla,v);
+					glm::vec3 p_south = this->eval_bezier(u,v+nabla);
+					
+					glm::vec3 normal = glm::normalize(glm::cross(glm::normalize(p_east-p_west), glm::normalize(p_south-p_north)));
+					
+					pos_map.insert({{x,y}, p_at});
+					nor_map.insert({{x,y}, normal});
 				}
 			}
 			
-			eval_map.clear();
+			for(unsigned y=0; y+1<detail; y++)
+			{
+				for(unsigned x=0; x+1<detail; x++)
+				{
+					//Top-left 
+					m_EvalMesh[pos].data << pos_map[{x  ,y  }];
+					m_EvalMesh[nor].data << nor_map[{x  ,y  }];
+					
+					//Top-right
+					m_EvalMesh[pos].data << pos_map[{x+1,y  }];
+					m_EvalMesh[nor].data << nor_map[{x+1,y  }];
+					
+					//Bottom-left
+					m_EvalMesh[pos].data << pos_map[{x  ,y+1}];
+					m_EvalMesh[nor].data << nor_map[{x  ,y+1}];
+					
+					//
+					
+					//Top-right
+					m_EvalMesh[pos].data << pos_map[{x+1,y  }];
+					m_EvalMesh[nor].data << nor_map[{x+1,y  }];
+					
+					//Bottom-left
+					m_EvalMesh[pos].data << pos_map[{x  ,y+1}];
+					m_EvalMesh[nor].data << nor_map[{x  ,y+1}];
+					
+					//Bottom-right
+					m_EvalMesh[pos].data << pos_map[{x+1,y+1}];
+					m_EvalMesh[nor].data << nor_map[{x+1,y+1}];
+				}
+			}
+			
+			pos_map.clear();
+			nor_map.clear();
 			
 			m_EvalMesh.upload();
+			
 			if(diffuse_shader != NULL)
 			{
 				diffuse_shader->use();
@@ -165,19 +205,21 @@ class editable_poly
 			}
 		};
 		
-		void draw(glm::mat4 matVP)
+		void draw(glm::mat4 matView, glm::mat4 matProj)
 		{
-			/*if(wireframe_shader != NULL)
+			if(wireframe_shader != NULL)
 			{
 				wireframe_shader->use();
-				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matVP));
+				glUniformMatrix4fv(glGetUniformLocation(wireframe_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matProj * matView));
 				m_WireMesh.draw();
-			}*/
+			}
 			
 			if(diffuse_shader != NULL)
 			{
 				diffuse_shader->use();
-				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uMVP"), 1, 0, glm::value_ptr(matVP));
+				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uModelView"), 1, 0, glm::value_ptr(matView));
+				glUniformMatrix4fv(glGetUniformLocation(diffuse_shader->handle(), "uProjection"), 1, 0, glm::value_ptr(matProj));
+				glUniform3f(glGetUniformLocation(diffuse_shader->handle(), "uLightDir"), 0.707f,0.707f, 0.0f);
 				m_EvalMesh.draw();
 			}
 		}
@@ -224,6 +266,8 @@ class window_surface: public window
 			glfwSetInputMode(this->handle(), GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
 			
 			glClearColor(1.0, 1.0, 1.0, 1.0);
+			glClearDepth(1.0);
+			glEnable(GL_DEPTH_TEST);
 			
 			//Shaders
 			std::cout << "Compiling shaders... ";
@@ -240,15 +284,15 @@ class window_surface: public window
 			if(!m_WireShader.attach(read_file("data/wireframe.fs").c_str(), shader_program::shader_type::fragment))
 				return;
 			
-			glBindFragDataLocation(m_DiffuseShader.handle(), 0, "outColor");
-			glBindFragDataLocation(m_WireShader.handle(), 0, "outColor");
 			m_DiffuseShader.link();
 			m_WireShader.link();
+			glBindFragDataLocation(m_DiffuseShader.handle(), 0, "outColor");
+			glBindFragDataLocation(m_WireShader.handle(), 0, "outColor");
 			
 			std::cout << "Ready to use" << std::endl;
 			
 			m_Poly.wireframe_shader = &m_WireShader;
-			m_Poly.diffuse_shader = &m_WireShader;//&m_DiffuseShader;
+			m_Poly.diffuse_shader = &m_DiffuseShader;
 			m_Poly.resize(4,4, 2.0, 8.0);
 			
 			m_Poly.build(32);
@@ -276,12 +320,12 @@ class window_surface: public window
 			f = std::fmod(glfwGetTime(), 8.0f)/8.0f;
 			angle = glm::radians(f*360.0f);
 			
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
 			m_CameraAt = dirvec(angle, glm::radians(45.0f))*4.0f;
 			m_View = glm::lookAt(m_CameraAt, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
 			
-			m_Poly.draw(m_Projection * m_View);
+			m_Poly.draw(m_View,m_Projection);
 			
 			glfwSwapBuffers(this->handle());
 			
