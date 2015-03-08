@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/constants.hpp>
 #include <glm/gtx/io.hpp>
 #include "frame/util.h"
 #include "frame/window.h"
@@ -344,8 +345,8 @@ class window_surface: public window
 			if(m_CameraGrabbed)
 			{
 				glm::vec2 delta = m_CameraGrabAt - m_Mouse;
-				m_CameraRot.x -= delta.y / 64.0f;
-				m_CameraRot.y -= delta.x / 64.0f;
+				m_CameraRot.x = glm::clamp(m_CameraRot.x - delta.y / 64.0f, -glm::radians(89.0f), glm::radians(89.0f));
+				m_CameraRot.y = std::fmod(m_CameraRot.y - delta.x / 64.0f, glm::two_pi<float>());
 				
 				m_CameraGrabAt = m_Mouse;
 			}
