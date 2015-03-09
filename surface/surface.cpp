@@ -78,6 +78,10 @@ class editable_poly
 		unsigned 				m_PointRows;
 		unsigned 				m_PointColumns;
 		
+		//TODO: Get an enum or smth
+		//0 - Bezier; 1 - B-Spline
+		unsigned 				m_Mode = 0; 
+		
 		separated_mesh			m_EvalMesh;
 		separated_mesh			m_ControlMesh;
 		separated_mesh			m_WireMesh;
@@ -196,6 +200,14 @@ class editable_poly
 			}
 		}
 		
+		glm::vec3 eval(float u, float v)
+		{
+			if(m_Mode == 0)
+				return eval_bezier(u,v);
+			else if(m_Mode == 1)
+				return eval_bspline(u,v);
+		}
+		
 		glm::vec3 eval_bezier(float u, float v)
 		{
 			glm::vec3 p = glm::vec3(0.0f);
@@ -214,7 +226,7 @@ class editable_poly
 			
 			if(order == 0)
 				return (ui(point) < t && t < ui(point+1)) ? 1.0f : 0.0f;
-			
+				
 			return (t-ui(point))/(ui(point+order) - ui(point)) * weight_bspline(t, point, point_count, order-1) +
 				   (ui(point+order+1) - t)/(ui(point+order+1) - ui(point+1)) * weight_bspline(t, point+1, point_count, order-1);
 		}
@@ -227,6 +239,8 @@ class editable_poly
 				for(unsigned col=0; col<m_PointColumns; col++)
 					p += weight_bspline(u, col, m_PointColumns, m_PointColumns) * 
 						 weight_bspline(v, row,	m_PointRows,    m_PointRows) * m_PointMatrix[hash(col, row)];
+			
+			return p;
 		}
 		
 		void build_eval_mesh(unsigned detail)
@@ -260,12 +274,12 @@ class editable_poly
 					float u = x/float(detail-1);
 					float v = y/float(detail-1);
 								 
-					glm::vec3 p_at = this->eval_bspline(u,v);
+					glm::vec3 p_at = this->eval(u,v);
 					
-					glm::vec3 p_west = this->eval_bspline(u-nabla,v);
-					glm::vec3 p_north = this->eval_bspline(u,v-nabla);
-					glm::vec3 p_east = this->eval_bspline(u+nabla,v);
-					glm::vec3 p_south = this->eval_bspline(u,v+nabla);
+					glm::vec3 p_west = this->eval(u-nabla,v);
+					glm::vec3 p_north = this->eval(u,v-nabla);
+					glm::vec3 p_east = this->eval(u+nabla,v);
+					glm::vec3 p_south = this->eval(u,v+nabla);
 					
 					glm::vec3 normal = glm::normalize(glm::cross(glm::normalize(p_east-p_west), glm::normalize(p_south-p_north)));
 					
@@ -338,8 +352,8 @@ class editable_poly
 				{
 					float u[2] = {x/(float)detail, (x+1)/(float)detail};
 					float v = row/(float)(wire_count-1);
-					m_WireMesh[pos].data << this->eval_bezier(u[0], v);
-					m_WireMesh[pos].data << this->eval_bezier(u[1], v);
+					m_WireMesh[pos].data << this->eval(u[0], v);
+					m_WireMesh[pos].data << this->eval(u[1], v);
 				}
 			}
 			
@@ -350,8 +364,8 @@ class editable_poly
 				{
 					float u = column/(float)(wire_count-1);
 					float v[2] = {y/(float)detail, (y+1)/(float)detail};
-					m_WireMesh[pos].data << this->eval_bezier(u, v[0]);
-					m_WireMesh[pos].data << this->eval_bezier(u, v[1]);
+					m_WireMesh[pos].data << this->eval(u, v[0]);
+					m_WireMesh[pos].data << this->eval(u, v[1]);
 				}
 			}
 			
