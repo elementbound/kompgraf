@@ -156,7 +156,7 @@ class editable_poly
 			m_GrabIndex = -1;
 		}
 		
-		void build(unsigned detail, unsigned wire_detail)
+		void build_control_mesh()
 		{
 			m_ControlMesh.clear_streams();
 			m_ControlMesh.storage_policy = GL_DYNAMIC_DRAW;
@@ -194,8 +194,6 @@ class editable_poly
 				wireframe_shader->use();
 				m_ControlMesh.bind();
 			}
-			
-			build_bezier(detail, wire_detail);
 		}
 		
 		glm::vec3 eval_bezier(float u, float v)
@@ -210,7 +208,28 @@ class editable_poly
 			return p;
 		}
 		
-		void build_bezier(unsigned detail, unsigned wire_detail)
+		float weight_bspline(float t, unsigned point, unsigned point_count, unsigned order)
+		{
+			auto ui = [point_count](unsigned i) -> float {return i/(float)point_count;};
+			
+			if(order == 0)
+				return (ui(point) < t && t < ui(point+1)) ? 1.0f : 0.0f;
+			
+			return (t-ui(point))/(ui(point+order) - ui(point)) * weight_bspline(t, point, point_count, order-1) +
+				   (ui(point+order+1) - t)/(ui(point+order+1) - ui(point+1)) * weight_bspline(t, point+1, point_count, order-1);
+		}
+		
+		glm::vec3 eval_bspline(float u, float v)
+		{
+			glm::vec3 p = glm::vec3(0.0f);
+			
+			for(unsigned row=0; row<m_PointRows; row++)
+				for(unsigned col=0; col<m_PointColumns; col++)
+					p += weight_bspline(u, col, m_PointColumns, m_PointColumns) * 
+						 weight_bspline(v, row,	m_PointRows,    m_PointRows) * m_PointMatrix[hash(col, row)];
+		}
+		
+		void build_eval_mesh(unsigned detail)
 		{
 			m_EvalMesh.clear_streams();
 			m_EvalMesh.storage_policy = GL_DYNAMIC_DRAW;
@@ -241,12 +260,12 @@ class editable_poly
 					float u = x/float(detail-1);
 					float v = y/float(detail-1);
 								 
-					glm::vec3 p_at = this->eval_bezier(u,v);
+					glm::vec3 p_at = this->eval_bspline(u,v);
 					
-					glm::vec3 p_west = this->eval_bezier(u-nabla,v);
-					glm::vec3 p_north = this->eval_bezier(u,v-nabla);
-					glm::vec3 p_east = this->eval_bezier(u+nabla,v);
-					glm::vec3 p_south = this->eval_bezier(u,v+nabla);
+					glm::vec3 p_west = this->eval_bspline(u-nabla,v);
+					glm::vec3 p_north = this->eval_bspline(u,v-nabla);
+					glm::vec3 p_east = this->eval_bspline(u+nabla,v);
+					glm::vec3 p_south = this->eval_bspline(u,v+nabla);
 					
 					glm::vec3 normal = glm::normalize(glm::cross(glm::normalize(p_east-p_west), glm::normalize(p_south-p_north)));
 					
@@ -297,14 +316,15 @@ class editable_poly
 				diffuse_shader->use();
 				m_EvalMesh.bind();
 			}
-			
-			//=================================================================================
-			
+		}
+		
+		void build_wire_mesh(unsigned detail, unsigned wire_count)
+		{
 			m_WireMesh.clear_streams();
 			m_WireMesh.storage_policy = GL_DYNAMIC_DRAW;
 			m_WireMesh.draw_mode = GL_LINES;
 			
-			pos = m_WireMesh.add_stream();
+			unsigned pos = m_WireMesh.add_stream();
 			m_WireMesh[pos].type = GL_FLOAT;
 			m_WireMesh[pos].buffer_type = GL_ARRAY_BUFFER;
 			m_WireMesh[pos].components = 3;
@@ -312,23 +332,23 @@ class editable_poly
 			m_WireMesh[pos].name = "vertexPosition";
 			
 			//Rows
-			for(unsigned row = 0; row < wire_detail; row++)
+			for(unsigned row = 0; row < wire_count; row++)
 			{
 				for(unsigned x=0; x+1<=detail; x++)
 				{
 					float u[2] = {x/(float)detail, (x+1)/(float)detail};
-					float v = row/(float)(wire_detail-1);
+					float v = row/(float)(wire_count-1);
 					m_WireMesh[pos].data << this->eval_bezier(u[0], v);
 					m_WireMesh[pos].data << this->eval_bezier(u[1], v);
 				}
 			}
 			
 			//Columns
-			for(unsigned column = 0; column < wire_detail; column++)
+			for(unsigned column = 0; column < wire_count; column++)
 			{
 				for(unsigned y=0; y+1<=detail; y++)
 				{
-					float u = column/(float)(wire_detail-1);
+					float u = column/(float)(wire_count-1);
 					float v[2] = {y/(float)detail, (y+1)/(float)detail};
 					m_WireMesh[pos].data << this->eval_bezier(u, v[0]);
 					m_WireMesh[pos].data << this->eval_bezier(u, v[1]);
@@ -343,7 +363,14 @@ class editable_poly
 				wireframe_shader->use();
 				m_WireMesh.bind();
 			}
-		};
+		}
+		
+		void build(unsigned detail, unsigned wire_count)
+		{
+			build_control_mesh();
+			build_eval_mesh(detail);
+			build_wire_mesh(detail, wire_count);
+		}
 		
 		void draw(glm::mat4 matView, glm::mat4 matPerspective, glm::mat4 matOrtho)
 		{
