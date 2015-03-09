@@ -77,6 +77,44 @@ class editable_polygon
 					glcCircle(points[i].x, points[i].y, circle_radius, i != dragged_id);
 		}
 		
+		float weight(float t, unsigned i, unsigned p, unsigned n)
+		{
+			/*auto ti = [n](unsigned i) -> float {return i/(float)(n-1);};
+			
+			if(p == 0)
+				return (ti(i) <= t && t < ti(i+1)) ? 1.0f : 0.0;
+			else 
+				return (t - ti(i))/(ti(i+p) - ti(i)) * weight(t, i, p-1, n) + 
+					   (ti(i+p+1) - t)/(ti(i+p+1) - ti(i+1)) * weight(t, i+1, p-1, n);*/
+			
+			switch(i)
+			{
+				case 0: 
+					return 1.0f/6.0f * pow(1.0-t, 3);
+					
+				case 1: 
+					return 1.0/2.0 * pow(t, 3) - pow(t,2) + 2.0/3.0;
+					
+				case 2: 
+					return -1.0/2.0 * pow(t, 3) + 1.0/2.0 * pow(t,2) + 1.0/2.0 * t + 1.0/6.0;
+					
+				case 3: 
+					return 1.0/6.0 * pow(t, 3);
+					
+				default: 
+					return 0.0f;
+			}
+		}
+		
+		glm::vec2 eval(float t, unsigned start, unsigned order)
+		{
+			glm::vec2 p = glm::vec2(0.0);
+			for(unsigned i=0; i<order; i++)
+				p += weight(t, i, order, points.size()) * points[(start+i) % points.size()];
+			
+			return p;
+		}
+		
 		void draw_bspline(unsigned det)
 		{
 			if(points.size() < 4)
@@ -90,11 +128,8 @@ class editable_polygon
 				for(unsigned j=0; j<det; j++)
 				{
 					double t = j/(double)(det-1);
-					eval_point  = float(1.0f/6.0f * pow(1.0-t, 3)) * points[i];
-					eval_point += float(1.0/2.0 * pow(t, 3) - pow(t,2) + 2.0/3.0) * points[(i+1) % points.size()];
-					eval_point += float(-1.0/2.0 * pow(t, 3) + 1.0/2.0 * pow(t,2) + 1.0/2.0 * t + 1.0/6.0) * points[(i+2) % points.size()];
-					eval_point += float(1.0/6.0 * pow(t, 3)) * points[(i+3) % points.size()];
 					
+					glm::vec2 eval_point = this->eval(t, i, 4);
 					glVertex2d(eval_point.x, eval_point.y);
 				}
 				glEnd();
