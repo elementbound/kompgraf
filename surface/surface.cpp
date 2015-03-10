@@ -73,23 +73,25 @@ class window_surface: public window
 			m_BezierSurface.grid_mesh().bind();
 		}
 		
-	protected: 
-		void on_open()
+		bool init_glew()
 		{
-			this->make_current();
-			
 			if(glewInit() != GLEW_OK)
 			{
 				std::cerr << "GLEW init fail" << std::endl;
-				return;
+				return 0;
 			}
 		
 			if(!GLEW_VERSION_3_3)
 			{
 				std::cerr << "OpenGL 3.3 not supported" << std::endl;
-				return; 
+				return 0; 
 			}
 			
+			return 1;
+		}
+		
+		void init_window()
+		{
 			int w, h;
 			glfwGetFramebufferSize(this->handle(), &w, &h);
 			this->on_fbresize(w,h);
@@ -103,6 +105,16 @@ class window_surface: public window
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+		
+	protected: 
+		void on_open()
+		{
+			this->make_current();
+			if(!init_glew())
+				return;
+			
+			init_window();
 			
 			//Shaders
 			m_DiffuseShader.create();
