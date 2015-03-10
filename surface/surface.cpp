@@ -12,6 +12,8 @@
 #include "frame/shader.h"
 #include "frame/mesh.h"
 
+#include "draw_circles.h"
+
 #include <iostream>
 #include <map>
 #include <string>
@@ -22,54 +24,6 @@ void error_callback(int error, const char* error_str)
 {
 	std::cerr << "[" << error << "]" << error_str << std::endl;
 }
-
-class drawCircles
-{
-	private: 
-		static separated_mesh m_Mesh;
-		static unsigned pos;
-		
-	public: 
-		static void begin(bool outline)
-		{
-			m_Mesh.clear_streams();
-			m_Mesh.storage_policy = GL_STREAM_DRAW;
-			m_Mesh.draw_mode = GL_LINES;
-			
-			pos = m_Mesh.add_stream();
-			m_Mesh[pos].type = GL_FLOAT;
-			m_Mesh[pos].buffer_type = GL_ARRAY_BUFFER;
-			m_Mesh[pos].components = 2;
-			m_Mesh[pos].normalized = 0;
-			m_Mesh[pos].name = "vertexPosition";
-		}
-		
-		static void add_circle(float x, float y, float r, unsigned detail = 16)
-		{
-			for(unsigned i=0; i<detail; i++)
-			{
-				m_Mesh[pos].data << (glm::vec2(x,y) + r * dirvec(glm::two_pi<float>() * (i/float(detail))));
-				m_Mesh[pos].data << (glm::vec2(x,y) + r * dirvec(glm::two_pi<float>() * ((i+1)/float(detail))));
-			}
-		}
-		
-		static void single_circle(float x, float y, float r, bool outline, unsigned detail = 16)
-		{
-			begin(outline);
-			add_circle(x,y,r, detail);
-			end();
-		}
-		
-		static void end()
-		{
-			m_Mesh.upload();
-			m_Mesh.bind();
-			m_Mesh.draw();
-		}
-};
-
-separated_mesh 	drawCircles::m_Mesh;
-unsigned 		drawCircles::pos;
 
 class editable_poly
 {
@@ -639,6 +593,8 @@ int main()
 	wnd.open(640,480, "gone GRID");
 	if(!wnd)
 		return 3;
+	
+	glfwSwapInterval(0);
 	
 	while(!glfwWindowShouldClose(wnd.handle()))
 	{
