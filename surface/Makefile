@@ -7,6 +7,7 @@ build:
 	g++ -c -std=c++11 -I../ draw_circles.cpp -o bin/draw_circles.o
 	g++ -c -std=c++11 -I../ control_poly.cpp -o bin/control_poly.o
 	g++ -c -std=c++11 -I../ editable_control_poly.cpp -o bin/editable_control_poly.o
+	g++ -c -std=c++11 -I../ spline_surface.cpp -o bin/spline_surface.o
 	g++ -c -std=c++11 -I../ surface.cpp -o bin/surface.o
 	g++ bin/*.o -lglfw3 -lgdi32 -lopengl32 -lglew32 -o surface
 	copy /Y ..\glew32.dll .\glew32.dll
