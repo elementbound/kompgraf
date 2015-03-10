@@ -54,13 +54,13 @@ void control_surface::build_mesh()
 			if(col+1 < m_Columns)
 			{
 				m_Mesh[pos].data << m_Points[hash(row  , col  )];
-				m_Mesh[pos].data << m_Points[hash(row+1, col  )];
+				m_Mesh[pos].data << m_Points[hash(row  , col+1)];
 			}
 			
 			if(row+1 < m_Rows)
 			{
 				m_Mesh[pos].data << m_Points[hash(row  , col  )];
-				m_Mesh[pos].data << m_Points[hash(row  , col+1)];
+				m_Mesh[pos].data << m_Points[hash(row+1, col  )];
 			}
 		}
 	}
