@@ -3,7 +3,7 @@
 
 #include "control_poly.h"
 
-class editable_control_surface : control_surface 
+class editable_control_surface : public control_surface 
 {
 	private: 
 		int		m_GrabIndex = -1;
