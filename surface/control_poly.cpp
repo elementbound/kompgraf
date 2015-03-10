@@ -5,6 +5,20 @@ unsigned control_surface::hash(unsigned row, unsigned column) const {
 	return column + row*m_Columns;
 }
 
+control_surface::control_surface(const control_surface& rhs)
+{
+	m_Points = rhs.m_Points;
+	m_Rows = rhs.m_Rows;
+	m_Columns = rhs.m_Columns;
+}
+
+control_surface& control_surface::operator=(const control_surface& rhs)
+{
+	m_Points = rhs.m_Points;
+	m_Rows = rhs.m_Rows;
+	m_Columns = rhs.m_Columns;
+}
+
 glm::vec3&			control_surface::operator()(unsigned row, unsigned column) 		 {return this->get(row, column);}
 const glm::vec3&	control_surface::operator()(unsigned row, unsigned column) const {return this->get(row, column);}
 glm::vec3&			control_surface::get(unsigned row, unsigned column)			{return m_Points[hash(row, column)];}

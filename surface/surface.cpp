@@ -22,6 +22,8 @@
 #include <vector>
 #include <cmath>
 
+#define DEBUG(msg) std::cout << msg << std::endl
+
 void error_callback(int error, const char* error_str)
 {
 	std::cerr << "[" << error << "]" << error_str << std::endl;
@@ -57,9 +59,24 @@ class window_surface: public window
 		
 		void build_surface(unsigned detail, unsigned grid_density)
 		{
+			DEBUG("bulding control mesh");
 			m_ControlSurface.build_mesh();
+			
+			DEBUG("building grid mesh");
 			m_BezierSurface.build_grid(detail, grid_density);
+			
+			DEBUG("bulding eval mesh");
 			m_BezierSurface.build_eval(detail);
+			
+			DEBUG("binding eval mesh");
+			m_DiffuseShader.use();
+			m_BezierSurface.eval_mesh().bind();
+			
+			m_WireShader.use();
+			DEBUG("binding control mesh");
+			m_ControlSurface.mesh().bind();
+			DEBUG("binding eval mesh");
+			m_BezierSurface.grid_mesh().bind();
 		}
 		
 	protected: 
@@ -114,7 +131,10 @@ class window_surface: public window
 			
 			std::cout << "Ready to use" << std::endl;
 			
+			DEBUG("surface resize");
 			m_ControlSurface.resize(4,4);
+			
+			DEBUG("surface loop");
 			for(unsigned row = 0; row < m_ControlSurface.rows(); row++)
 				for(unsigned col = 0; col < m_ControlSurface.columns(); col++)
 				{
@@ -129,6 +149,7 @@ class window_surface: public window
 					
 					m_ControlSurface(row,col) = glm::vec3(u*2.0f, v*2.0f, z);
 				}
+			m_BezierSurface.control_data = m_ControlSurface;
 			build_surface(m_FullQuality, m_GridDensity);
 			
 			m_CameraAt = glm::vec3(4.0f,4.0f,4.0f);
@@ -268,23 +289,27 @@ class window_surface: public window
 
 int main()
 {
+	DEBUG("glfw init");
 	glfwSetErrorCallback(error_callback);
 	if(!glfwInit())
 		return 1;
-		
+	
 	window_surface wnd;
 	
+	DEBUG("setting window flags");
 	glewExperimental = GL_TRUE;
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	
+	DEBUG("opening window");
 	wnd.open(640,480, "gone GRID");
 	if(!wnd)
-		return 3;
+		return 132;
 	
 	glfwSwapInterval(0);
 	
+	DEBUG("main loop");
 	while(!glfwWindowShouldClose(wnd.handle()))
 	{
 		wnd.refresh();

@@ -17,6 +17,12 @@ class control_surface
 		unsigned hash(unsigned row, unsigned column) const;
 		
 	public: 
+		control_surface() = default;;
+		control_surface(const control_surface&);
+		~control_surface() = default;
+	
+		control_surface& operator=(const control_surface& rhs);
+	
 		glm::vec3&			operator()(unsigned row, unsigned column);
 		const glm::vec3&	operator()(unsigned row, unsigned column) const;
 		glm::vec3&			get(unsigned row, unsigned column);
