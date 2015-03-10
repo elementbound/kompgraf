@@ -146,3 +146,17 @@ separated_mesh& spline_surface::grid_mesh()
 {
 	return m_GridMesh;
 }
+
+//===========================================================================================//
+
+float bezier_surface::weight(float u, float v, unsigned row, unsigned col) const 
+{
+	return float(std::pow(u,col)*std::pow(1.0f-u, control_data.columns()-1-col)*combi(control_data.columns()-1, col)) * 
+		   float(std::pow(v,row)*std::pow(1.0f-v, control_data.rows()   -1-row)*combi(control_data.rows()   -1, row));
+}
+
+float bspline_surface::weight(float u, float v, unsigned row, unsigned col) const 
+{
+	return ( col/(float)control_data.columns() < u && (col+1)/(float)control_data.columns() ) * 
+		   ( row/(float)control_data.rows() < v    && (row+1)/(float)control_data.rows());
+}

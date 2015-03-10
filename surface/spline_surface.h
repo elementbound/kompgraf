@@ -24,4 +24,18 @@ class spline_surface
 		separated_mesh& 	grid_mesh();
 };
 
+class bezier_surface: spline_surface
+{
+	public: 
+		float weight(float u, float v, unsigned row, unsigned col) const;
+};
+
+class bspline_surface: spline_surface 
+{
+	public: 
+		unsigned order = 2;
+		
+		float weight(float u, float v, unsigned row, unsigned col) const;
+};
+
 #endif
