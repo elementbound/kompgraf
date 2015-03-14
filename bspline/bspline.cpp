@@ -32,6 +32,7 @@ class editable_polygon
 	public:
 		std::vector<glm::vec2> points;
 		bool isClosed;
+		unsigned m_Order = 5;
 		
 		double circle_radius;
 		int dragged_id;
@@ -79,37 +80,42 @@ class editable_polygon
 		
 		float weight(float t, unsigned i, unsigned p, unsigned n)
 		{
-			/*auto ti = [n](unsigned i) -> float {return i/(float)(n-1);};
-			
-			if(p == 0)
-				return (ti(i) <= t && t < ti(i+1)) ? 1.0f : 0.0;
-			else 
-				return (t - ti(i))/(ti(i+p) - ti(i)) * weight(t, i, p-1, n) + 
-					   (ti(i+p+1) - t)/(ti(i+p+1) - ti(i+1)) * weight(t, i+1, p-1, n);*/
-			
-			switch(i)
+			if(p != 3)
 			{
-				case 0: 
-					return 1.0f/6.0f * pow(1.0-t, 3);
-					
-				case 1: 
-					return 1.0/2.0 * pow(t, 3) - pow(t,2) + 2.0/3.0;
-					
-				case 2: 
-					return -1.0/2.0 * pow(t, 3) + 1.0/2.0 * pow(t,2) + 1.0/2.0 * t + 1.0/6.0;
-					
-				case 3: 
-					return 1.0/6.0 * pow(t, 3);
-					
-				default: 
-					return 0.0f;
+				auto ti = [n](unsigned i) -> float {return i/(float)(n-1);};
+				
+				if(p == 0)
+					return (ti(i) <= t && t < ti(i+1)) ? 1.0f : 0.0;
+				else 
+					return (t - ti(i))/(ti(i+p) - ti(i)) * weight(t, i, p-1, n) + 
+						   (ti(i+p+1) - t)/(ti(i+p+1) - ti(i+1)) * weight(t, i+1, p-1, n);
+			}
+			else 
+			{
+				switch(i)
+				{
+					case 0: 
+						return 1.0f/6.0f * pow(1.0-t, 3);
+						
+					case 1: 
+						return 1.0/2.0 * pow(t, 3) - pow(t,2) + 2.0/3.0;
+						
+					case 2: 
+						return -1.0/2.0 * pow(t, 3) + 1.0/2.0 * pow(t,2) + 1.0/2.0 * t + 1.0/6.0;
+						
+					case 3: 
+						return 1.0/6.0 * pow(t, 3);
+						
+					default: 
+						return 0.0f;
+				}
 			}
 		}
 		
 		glm::vec2 eval(float t, unsigned start, unsigned order)
 		{
 			glm::vec2 p = glm::vec2(0.0);
-			for(unsigned i=0; i<order; i++)
+			for(unsigned i=0; i<=order; i++)
 				p += weight(t, i, order, points.size()) * points[(start+i) % points.size()];
 			
 			return p;
@@ -117,10 +123,10 @@ class editable_polygon
 		
 		void draw_bspline(unsigned det)
 		{
-			if(points.size() < 4)
+			if(points.size() < m_Order+1)
 				return;
 			
-			for(int i=0; i<points.size() - (isClosed ? 0 : 3); i++)
+			for(int i=0; i<points.size() - (isClosed ? 0 : m_Order); i++)
 			{
 				glm::vec2 eval_point;
 				
@@ -129,7 +135,7 @@ class editable_polygon
 				{
 					double t = j/(double)(det-1);
 					
-					glm::vec2 eval_point = this->eval(t, i, 4);
+					glm::vec2 eval_point = this->eval(t, i, m_Order);
 					glVertex2d(eval_point.x, eval_point.y);
 				}
 				glEnd();
