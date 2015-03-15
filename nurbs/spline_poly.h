@@ -32,10 +32,16 @@ class bspline_poly: public spline_poly
 	public: 
 		unsigned order = 3;
 		
-		float weight(float t, unsigned i) const;
-		glm::vec2 eval(float t, unsigned i) const;
+		virtual float weight(float t, unsigned i) const;
+		virtual glm::vec2 eval(float t, unsigned i) const;
 		
-		void build_eval(unsigned detail);
+		virtual void build_eval(unsigned detail);
+};
+
+class nurbs_poly: public bspline_poly 
+{
+	public: 
+		glm::vec2 eval(float t, unsigned i) const;
 };
 
 #endif

@@ -27,7 +27,7 @@ class nurbs_window : public resizable_window
 	private: 
 		shader_program			m_WireShader;
 		editable_control_poly	m_ControlPoly;
-		bspline_poly			m_SplinePoly;
+		nurbs_poly				m_SplinePoly;
 		
 		glm::mat4	m_View;
 		glm::mat4	m_Ortho;
@@ -37,6 +37,7 @@ class nurbs_window : public resizable_window
 		bool m_Editing = 0;
 		unsigned m_FullQuality = 16;
 		unsigned m_EditQuality = 64;
+		int m_GrabId = -1;
 		
 		bool init_glew()
 		{
@@ -145,6 +146,14 @@ class nurbs_window : public resizable_window
 				m_ControlPoly.add(point);
 				rebuild_spline();
 			}
+			
+			if(key == GLFW_KEY_W && action == GLFW_PRESS)
+			{
+				for(unsigned i=0; i<m_ControlPoly.size(); i++)
+					m_ControlPoly.weight(i) = 1.0f;
+				
+				rebuild_spline();
+			}
 		}
 		
 		void on_mousebutton(int button, int action, int mods)
@@ -153,7 +162,8 @@ class nurbs_window : public resizable_window
 			{
 				if(action == GLFW_PRESS)
 				{
-					m_Editing = (m_ControlPoly.grab(m_Mouse, m_View, m_Ortho, m_Viewport) >= 0);
+					m_GrabId = m_ControlPoly.grab(m_Mouse, m_View, m_Ortho, m_Viewport);
+					m_Editing = (m_GrabId >= 0);
 					if(m_Editing) glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				}
 				else if(action == GLFW_RELEASE)
@@ -163,6 +173,19 @@ class nurbs_window : public resizable_window
 					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				}
 			}
+		}
+		
+		void on_mousescroll(double x, double y)
+		{
+			if(!m_Editing)
+				return;
+			
+			if(y > 0.0)
+				m_ControlPoly.weight(m_GrabId) *= std::pow(2.0, 1.0/16.0);
+			else 
+				m_ControlPoly.weight(m_GrabId) /= std::pow(2.0, 1.0/16.0);
+			
+			rebuild_spline();
 		}
 		
 		void on_refresh()

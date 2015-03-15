@@ -110,3 +110,21 @@ void bspline_poly::build_eval(unsigned detail)
 	
 	m_EvalMesh.upload();
 }
+
+//===========================================================================================//
+
+glm::vec2 nurbs_poly::eval(float t, unsigned i) const
+{
+	glm::vec2 p = glm::vec2(0.0f);
+	float weight_sum = 0.0f;
+	
+	for(unsigned j=0; j < order+1; j++)
+	{
+		p += this->weight(t, j) * control_data->weight((i+j) % control_data->size()) * 
+			 control_data->get((i+j)%control_data->size());
+			 
+		weight_sum += this->weight(t, j) * control_data->weight((i+j) % control_data->size());
+	}
+	
+	return p/weight_sum;
+}
