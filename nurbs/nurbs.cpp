@@ -11,6 +11,7 @@
 #include "frame/mesh.h"
 
 #include "editable_control_poly.h"
+#include "spline_poly.h"
 
 #include <iostream> 
 
@@ -25,7 +26,8 @@ class nurbs_window : public resizable_window
 {
 	private: 
 		shader_program			m_WireShader;
-		editable_control_poly	m_Poly;
+		editable_control_poly	m_ControlPoly;
+		bezier_poly				m_SplinePoly;
 		
 		glm::mat4	m_View;
 		glm::mat4	m_Ortho;
@@ -33,6 +35,8 @@ class nurbs_window : public resizable_window
 		glm::vec4 	m_Viewport;
 		
 		bool m_Editing = 0;
+		unsigned m_FullQuality = 128;
+		unsigned m_EditQuality = 64;
 		
 		bool init_glew()
 		{
@@ -67,6 +71,17 @@ class nurbs_window : public resizable_window
 			m_View = glm::mat4(1.0f);
 		}
 		
+		void rebuild_spline()
+		{
+			m_ControlPoly.build_meshes();
+			m_SplinePoly.build_eval(m_Editing ? m_EditQuality : m_FullQuality);
+				
+			m_WireShader.use();
+			m_ControlPoly.control_mesh().bind();
+			m_ControlPoly.knot_mesh().bind();
+			m_SplinePoly.eval_mesh().bind();
+		}
+		
 	protected: 
 		void on_open()
 		{
@@ -94,6 +109,9 @@ class nurbs_window : public resizable_window
 			}
 			
 			m_WireShader.link();
+			
+			//Spline 
+			m_SplinePoly.control_data = &m_ControlPoly;
 		}
 		
 		void on_fbresize(int w, int h)
@@ -113,12 +131,8 @@ class nurbs_window : public resizable_window
 			
 			if(m_Editing) 
 			{
-				m_Poly.edit(m_Mouse, m_View, m_Ortho, m_Viewport);
-				m_Poly.build_meshes();
-				
-				m_WireShader.use();
-				m_Poly.control_mesh().bind();
-				m_Poly.knot_mesh().bind();
+				m_ControlPoly.edit(m_Mouse, m_View, m_Ortho, m_Viewport);
+				rebuild_spline();
 			}
 		}
 		
@@ -128,12 +142,8 @@ class nurbs_window : public resizable_window
 			{
 				glm::vec2 point = m_Mouse; //Screen-space
 				point = glm::unProject(glm::vec3(m_Mouse.x, m_Mouse.y, 0.0f), m_View, m_Ortho, m_Viewport).xy(); //World-space 
-				m_Poly.add(point);
-				m_Poly.build_meshes();
-				
-				m_WireShader.use();
-				m_Poly.control_mesh().bind();
-				m_Poly.knot_mesh().bind();
+				m_ControlPoly.add(point);
+				rebuild_spline();
 			}
 		}
 		
@@ -143,13 +153,13 @@ class nurbs_window : public resizable_window
 			{
 				if(action == GLFW_PRESS)
 				{
-					m_Editing = (m_Poly.grab(m_Mouse, m_View, m_Ortho, m_Viewport) >= 0);
+					m_Editing = (m_ControlPoly.grab(m_Mouse, m_View, m_Ortho, m_Viewport) >= 0);
 					if(m_Editing) glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				}
 				else if(action == GLFW_RELEASE)
 				{
 					m_Editing = 0;
-					m_Poly.ungrab();
+					m_ControlPoly.ungrab();
 					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				}
 			}
@@ -167,8 +177,9 @@ class nurbs_window : public resizable_window
 			m_WireShader.use();
 			m_WireShader.set_uniform("uMVP", m_Ortho * m_View);
 			m_WireShader.set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-			m_Poly.control_mesh().draw();
-			m_Poly.knot_mesh().draw();
+			m_ControlPoly.control_mesh().draw();
+			m_ControlPoly.knot_mesh().draw();
+			m_SplinePoly.eval_mesh().draw();
 			
 			glfwSwapBuffers(this->handle());
 		}
