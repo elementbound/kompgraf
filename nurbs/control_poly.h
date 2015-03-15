@@ -6,7 +6,7 @@
 
 class control_poly 
 {
-	private: 
+	protected: 
 		std::vector<glm::vec2> m_Data; 
 		
 	public: 

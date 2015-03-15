@@ -1,13 +1,15 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#define GLM_SWIZZLE
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "frame/util.h"
 #include "frame/resizable_window.h"
 #include "frame/shader.h"
 #include "frame/mesh.h"
 
-#include "control_poly.h"
+#include "editable_control_poly.h"
 
 #include <iostream> 
 
@@ -21,7 +23,7 @@ void error_callback(int error, const char* error_str)
 class nurbs_window : public resizable_window
 {
 	private: 
-		control_poly m_Poly;
+		editable_control_poly m_Poly;
 };
 
 int main()
