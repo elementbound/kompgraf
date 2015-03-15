@@ -1,6 +1,7 @@
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
 
 #include "editable_control_poly.h"
 #include "frame/util.h" // buffer << glm::vec2
@@ -38,26 +39,55 @@ void editable_control_poly::ungrab()
 	m_GrabIndex = -1;
 }
 
-void editable_control_poly::build_mesh()
+void editable_control_poly::build_meshes()
 {
-	m_Mesh.clear_streams();
-	m_Mesh.storage_policy = GL_DYNAMIC_DRAW;
-	m_Mesh.draw_mode = GL_LINES;
+	m_ControlMesh.clear_streams();
+	m_ControlMesh.storage_policy = GL_DYNAMIC_DRAW;
+	m_ControlMesh.draw_mode = GL_LINES;
 	
-	unsigned pos = m_Mesh.add_stream();
-	m_Mesh[pos].type = GL_FLOAT;
-	m_Mesh[pos].buffer_type = GL_ARRAY_BUFFER;
-	m_Mesh[pos].components = 2;
-	m_Mesh[pos].normalized = 0;
-	m_Mesh[pos].name = "vertexPosition";
+	unsigned pos = m_ControlMesh.add_stream();
+	m_ControlMesh[pos].type = GL_FLOAT;
+	m_ControlMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+	m_ControlMesh[pos].components = 2;
+	m_ControlMesh[pos].normalized = 0;
+	m_ControlMesh[pos].name = "vertexPosition";
 	
 	for(unsigned i=1; i<m_Data.size(); i++)
-		m_Mesh[pos].data << m_Data[i-1] << m_Data[i]; 
+		m_ControlMesh[pos].data << m_Data[i-1] << m_Data[i]; 
 	
-	m_Mesh.upload();
+	m_ControlMesh.upload();
+	
+	//
+	
+	m_KnotsMesh.clear_streams();
+	m_KnotsMesh.storage_policy = GL_DYNAMIC_DRAW;
+	m_KnotsMesh.draw_mode = GL_LINES;
+	
+	pos = m_KnotsMesh.add_stream();
+	m_KnotsMesh[pos].type = GL_FLOAT;
+	m_KnotsMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+	m_KnotsMesh[pos].components = 2;
+	m_KnotsMesh[pos].normalized = 0;
+	m_KnotsMesh[pos].name = "vertexPosition";
+	
+	for(glm::vec2& p : m_Data)
+	{
+		for(unsigned i=0; i<knot_detail; i++)
+		{
+			m_KnotsMesh[pos].data << (p + (float)grab_radius * dirvec(i/(float)knot_detail * glm::two_pi<float>()));
+			m_KnotsMesh[pos].data << (p + (float)grab_radius * dirvec((i+1)/(float)knot_detail * glm::two_pi<float>()));
+		}
+	}
+	
+	m_KnotsMesh.upload();
 }
 
-separated_mesh& editable_control_poly::mesh()
+separated_mesh& editable_control_poly::control_mesh()
 {
-	return m_Mesh;
+	return m_ControlMesh;
+}
+
+separated_mesh& editable_control_poly::knot_mesh()
+{
+	return m_KnotsMesh;
 }

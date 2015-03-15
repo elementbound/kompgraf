@@ -119,10 +119,11 @@ class nurbs_window : public resizable_window
 				glm::vec2 point = m_Mouse; //Screen-space
 				point = glm::unProject(glm::vec3(m_Mouse.x, m_Mouse.y, 0.0f), m_View, m_Ortho, m_Viewport).xy(); //World-space 
 				m_Poly.add(point);
-				m_Poly.build_mesh();
+				m_Poly.build_meshes();
 				
 				m_WireShader.use();
-				m_Poly.mesh().bind();
+				m_Poly.control_mesh().bind();
+				m_Poly.knot_mesh().bind();
 			}
 		}
 		
@@ -138,7 +139,8 @@ class nurbs_window : public resizable_window
 			m_WireShader.use();
 			m_WireShader.set_uniform("uMVP", m_Ortho * m_View);
 			m_WireShader.set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-			m_Poly.mesh().draw();
+			m_Poly.control_mesh().draw();
+			m_Poly.knot_mesh().draw();
 			
 			glfwSwapBuffers(this->handle());
 		}
