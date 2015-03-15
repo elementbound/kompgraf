@@ -7,6 +7,8 @@
 #include "frame/shader.h"
 #include "frame/mesh.h"
 
+#include "control_poly.h"
+
 #include <iostream> 
 
 #define DEBUG(msg) std::cout << msg << std::endl
@@ -16,23 +18,10 @@ void error_callback(int error, const char* error_str)
 	std::cerr << "[" << error << "]" << error_str << std::endl;
 }
 
-class control_poly 
-{
-	private: 
-		std::vector<glm::vec2> m_Data; 
-		
-	public: 
-		glm::vec2& 			get(unsigned i);
-		const glm::vec2&	get(unsigned i) const;
-		glm::vec2&			operator()(unsigned i);
-		const glm::vec2&	operator()(unsigned i) const;
-		
-		unsigned size() const;
-		void resize(unsigned s);
-};
-
 class nurbs_window : public resizable_window
 {
+	private: 
+		control_poly m_Poly;
 };
 
 int main()
