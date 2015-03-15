@@ -110,6 +110,16 @@ class nurbs_window : public resizable_window
 		void on_mousepos(double x, double y)
 		{
 			m_Mouse = glm::vec2(x,m_FramebufferHeight - y); //Shady stuff
+			
+			if(m_Editing) 
+			{
+				m_Poly.edit(m_Mouse, m_View, m_Ortho, m_Viewport);
+				m_Poly.build_meshes();
+				
+				m_WireShader.use();
+				m_Poly.control_mesh().bind();
+				m_Poly.knot_mesh().bind();
+			}
 		}
 		
 		void on_key(int key, int scancode, int action, int mods)
@@ -124,6 +134,24 @@ class nurbs_window : public resizable_window
 				m_WireShader.use();
 				m_Poly.control_mesh().bind();
 				m_Poly.knot_mesh().bind();
+			}
+		}
+		
+		void on_mousebutton(int button, int action, int mods)
+		{
+			if(button == GLFW_MOUSE_BUTTON_LEFT)
+			{
+				if(action == GLFW_PRESS)
+				{
+					m_Editing = (m_Poly.grab(m_Mouse, m_View, m_Ortho, m_Viewport) >= 0);
+					if(m_Editing) glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				}
+				else if(action == GLFW_RELEASE)
+				{
+					m_Editing = 0;
+					m_Poly.ungrab();
+					glfwSetInputMode(this->handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				}
 			}
 		}
 		
