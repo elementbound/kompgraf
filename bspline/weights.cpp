@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 	unsigned detail = atoi(argv[2]);
 	std::vector<double> knot_values;
 	
-	knot_values.resize(order+2);
+	knot_values.resize(order+1 + order + 1); //number of control points + order + 1
 	std::generate(knot_values.begin(), knot_values.end(), 
 		[]() -> double {
 			static unsigned i=0;
