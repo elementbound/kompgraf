@@ -19,6 +19,9 @@ class control_poly
 		
 		unsigned size() const;
 		void resize(unsigned s);
+		
+		void clear();
+		void add(glm::vec2 p);
 };
 
 #endif

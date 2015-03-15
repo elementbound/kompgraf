@@ -3,6 +3,7 @@
 #define GLM_SWIZZLE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/io.hpp>
 
 #include "frame/util.h"
 #include "frame/resizable_window.h"
@@ -56,15 +57,14 @@ class nurbs_window : public resizable_window
 			glfwGetFramebufferSize(this->handle(), &w, &h);
 			this->on_fbresize(w,h);
 			
-			glfwSetInputMode(this->handle(), GLFW_STICKY_KEYS, GL_TRUE);
 			glfwSetInputMode(this->handle(), GLFW_STICKY_MOUSE_BUTTONS, GL_TRUE);
 			
 			//GL init
 			glClearColor(1.0, 1.0, 1.0, 1.0);
-			glClearDepth(1.0);
-			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			
+			m_View = glm::mat4(1.0f);
 		}
 		
 	protected: 
@@ -72,7 +72,10 @@ class nurbs_window : public resizable_window
 		{
 			this->make_current();
 			if(!init_glew())
+			{
+				std::cerr << "GLEW init fail\n";
 				return;
+			}
 			
 			init_window();
 			
@@ -80,15 +83,23 @@ class nurbs_window : public resizable_window
 			m_WireShader.create();
 			
 			if(!m_WireShader.attach(read_file("data/wireframe.vs").c_str(), shader_program::shader_type::vertex))
+			{
+				std::cerr << "Couldn't attach vertex shader\n";
 				return;
+			}
 			if(!m_WireShader.attach(read_file("data/wireframe.fs").c_str(), shader_program::shader_type::fragment))
+			{
+				std::cerr << "Couldn't attach fragment shader\n";
 				return;
+			}
 			
 			m_WireShader.link();
 		}
 		
 		void on_fbresize(int w, int h)
 		{
+			resizable_window::on_fbresize(w,h);
+			
 			w += (w==0);
 			h += (h==0);
 			
@@ -98,7 +109,21 @@ class nurbs_window : public resizable_window
 		
 		void on_mousepos(double x, double y)
 		{
-			m_Mouse = glm::vec2(x,m_WindowHeight - y);
+			m_Mouse = glm::vec2(x,m_FramebufferHeight - y); //Shady stuff
+		}
+		
+		void on_key(int key, int scancode, int action, int mods)
+		{
+			if(key == GLFW_KEY_Q && !m_Editing && action == GLFW_PRESS)
+			{
+				glm::vec2 point = m_Mouse; //Screen-space
+				point = glm::unProject(glm::vec3(m_Mouse.x, m_Mouse.y, 0.0f), m_View, m_Ortho, m_Viewport).xy(); //World-space 
+				m_Poly.add(point);
+				m_Poly.build_mesh();
+				
+				m_WireShader.use();
+				m_Poly.mesh().bind();
+			}
 		}
 		
 		void on_refresh()
@@ -109,6 +134,11 @@ class nurbs_window : public resizable_window
 			
 			//Draw
 			glClear(GL_COLOR_BUFFER_BIT);
+			
+			m_WireShader.use();
+			m_WireShader.set_uniform("uMVP", m_Ortho * m_View);
+			m_WireShader.set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			m_Poly.mesh().draw();
 			
 			glfwSwapBuffers(this->handle());
 		}
