@@ -3,7 +3,7 @@
 
 #include <GLM/glm.hpp>
 #include "frame/mesh.h"
-#include "control_poly.h"
+#include "control_surface.h"
 
 class spline_surface
 {

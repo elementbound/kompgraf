@@ -13,7 +13,7 @@
 #include "frame/mesh.h"
 
 #include "draw_circles.h"
-#include "editable_control_poly.h"
+#include "editable_control_surface.h"
 #include "spline_surface.h"
 
 #include <iostream>
