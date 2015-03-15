@@ -7,7 +7,7 @@
 
 class spline_poly
 {
-	private: 
+	protected: 
 		separated_mesh 		m_EvalMesh;
 		
 	public: 
@@ -16,7 +16,7 @@ class spline_poly
 		virtual float 		weight(float t, unsigned i) const = 0;
 		virtual glm::vec2 	eval(float t) const;
 		
-		void 				build_eval(unsigned detail);
+		virtual void 		build_eval(unsigned detail);
 		
 		separated_mesh& 	eval_mesh();
 };
@@ -33,7 +33,9 @@ class bspline_poly: public spline_poly
 		unsigned order = 3;
 		
 		float weight(float t, unsigned i) const;
-		glm::vec2 eval(float t) const;
+		glm::vec2 eval(float t, unsigned i) const;
+		
+		void build_eval(unsigned detail);
 };
 
 #endif

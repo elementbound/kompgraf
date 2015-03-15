@@ -35,8 +35,8 @@ class nurbs_window : public resizable_window
 		glm::vec4 	m_Viewport;
 		
 		bool m_Editing = 0;
-		unsigned m_FullQuality = 8;
-		unsigned m_EditQuality = 8;
+		unsigned m_FullQuality = 16;
+		unsigned m_EditQuality = 64;
 		
 		bool init_glew()
 		{

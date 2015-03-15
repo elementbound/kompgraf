@@ -73,18 +73,40 @@ float bspline_poly::weight(float t, unsigned i) const
 	}
 }
 
-glm::vec2 bspline_poly::eval(float t) const
+glm::vec2 bspline_poly::eval(float t, unsigned i) const
 {
-	std::cout << "bspline_poly::eval(" << t << "): " << (t * ( control_data->size() - order )) << " / ";
-	
 	glm::vec2 p = glm::vec2(0.0f);
-	unsigned offs = std::floor(t * ( control_data->size() - order ));
-	t = std::fmod(t, 1.0f);
 	
-	std::cout << offs << " / " << t << std::endl;
-	
-	for(unsigned i = 0; i < order+1; i++)
-		p += this->weight(t, i) * control_data->get((i+offs) % control_data->size());
+	for(unsigned j = 0; j < order+1; j++)
+		p += this->weight(t, j) * control_data->get((i+j) % control_data->size());
 	
 	return p;
+}
+
+void bspline_poly::build_eval(unsigned detail)
+{
+	if(control_data->size() < order+1)
+		return;
+	
+	m_EvalMesh.clear_streams();
+	m_EvalMesh.storage_policy = GL_DYNAMIC_DRAW;
+	m_EvalMesh.draw_mode = GL_LINE_STRIP;
+	
+	unsigned pos = m_EvalMesh.add_stream();
+	m_EvalMesh[pos].type = GL_FLOAT;
+	m_EvalMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+	m_EvalMesh[pos].components = 2;
+	m_EvalMesh[pos].normalized = 0;
+	m_EvalMesh[pos].name = "vertexPosition";
+	
+	for(unsigned i=0; i < control_data->size() - order; i++)
+	{
+		for(unsigned j=0; j<detail; j++)
+		{
+			float t = j/float(detail-1);
+			m_EvalMesh[pos].data << this->eval(t, i);
+		}
+	}
+	
+	m_EvalMesh.upload();
 }
