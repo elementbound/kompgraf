@@ -1,5 +1,7 @@
 #include "spline_poly.h"
 #include "frame/util.h"
+#include <cmath>
+#include <iostream>
 
 glm::vec2 spline_poly::eval(float t) const
 {
@@ -45,7 +47,44 @@ float bezier_poly::weight(float t, unsigned i) const
 	return float(std::pow(t,i)*std::pow(1.0f-t, control_data->size()-1-i)*combi(control_data->size()-1, i));
 }
 
+//===========================================================================================//
+
 float bspline_poly::weight(float t, unsigned i) const 
 {
-	return ( i/(float)control_data->size() <= t && t < (i+1)/(float)control_data->size() );
+	if(order != 3)
+		return 0.0f; //bspline > Tom ;-;
+	
+	switch(i)
+	{
+		case 0: 
+			return 1.0f/6.0f * pow(1.0-t, 3);
+			
+		case 1: 
+			return 1.0/2.0 * pow(t, 3) - pow(t,2) + 2.0/3.0;
+			
+		case 2: 
+			return -1.0/2.0 * pow(t, 3) + 1.0/2.0 * pow(t,2) + 1.0/2.0 * t + 1.0/6.0;
+			
+		case 3: 
+			return 1.0/6.0 * pow(t, 3);
+			
+		default: 
+			return 0.0f;
+	}
+}
+
+glm::vec2 bspline_poly::eval(float t) const
+{
+	std::cout << "bspline_poly::eval(" << t << "): " << (t * ( control_data->size() - order )) << " / ";
+	
+	glm::vec2 p = glm::vec2(0.0f);
+	unsigned offs = std::floor(t * ( control_data->size() - order ));
+	t = std::fmod(t, 1.0f);
+	
+	std::cout << offs << " / " << t << std::endl;
+	
+	for(unsigned i = 0; i < order+1; i++)
+		p += this->weight(t, i) * control_data->get((i+offs) % control_data->size());
+	
+	return p;
 }

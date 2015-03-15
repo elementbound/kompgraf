@@ -27,7 +27,7 @@ class nurbs_window : public resizable_window
 	private: 
 		shader_program			m_WireShader;
 		editable_control_poly	m_ControlPoly;
-		bezier_poly				m_SplinePoly;
+		bspline_poly			m_SplinePoly;
 		
 		glm::mat4	m_View;
 		glm::mat4	m_Ortho;
@@ -35,8 +35,8 @@ class nurbs_window : public resizable_window
 		glm::vec4 	m_Viewport;
 		
 		bool m_Editing = 0;
-		unsigned m_FullQuality = 128;
-		unsigned m_EditQuality = 64;
+		unsigned m_FullQuality = 8;
+		unsigned m_EditQuality = 8;
 		
 		bool init_glew()
 		{

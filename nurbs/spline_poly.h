@@ -14,7 +14,7 @@ class spline_poly
 		control_poly*		control_data = NULL;
 		
 		virtual float 		weight(float t, unsigned i) const = 0;
-		glm::vec2 			eval(float t) const;
+		virtual glm::vec2 	eval(float t) const;
 		
 		void 				build_eval(unsigned detail);
 		
@@ -33,6 +33,7 @@ class bspline_poly: public spline_poly
 		unsigned order = 3;
 		
 		float weight(float t, unsigned i) const;
+		glm::vec2 eval(float t) const;
 };
 
 #endif
