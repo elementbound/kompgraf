@@ -32,7 +32,7 @@ class editable_polygon
 	public:
 		std::vector<glm::vec2> points;
 		bool isClosed;
-		unsigned m_Order = 5;
+		unsigned m_Order = 3;
 		
 		double circle_radius;
 		int dragged_id;
@@ -241,6 +241,8 @@ int main()
 {
 	if(!glfwInit())
 		return 1;
+	
+	glfwWindowHint(GLFW_SAMPLES, 8);
 
 	app_window wnd;
 	wnd.open(512,512, "Dem test tho");
