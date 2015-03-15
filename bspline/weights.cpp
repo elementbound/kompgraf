@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 	
 	for(unsigned it=0; it<detail; it++)
 	{
-		double t = 1.0 + it/double(detail-1) * (order+1);
+		double t = 1.0 + it/double(detail-1) * order;
 		std::cout << "b(" << t << "): ";
 		
 		for(unsigned i=0; i<order+1; i++)
