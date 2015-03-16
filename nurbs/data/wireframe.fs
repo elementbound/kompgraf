@@ -2,9 +2,10 @@
 
 uniform vec4 uColor;
 
-out vec4 outColor;
+in	float	fragmentDistance;
+out vec4 	outColor;
 
 void main()
 {
-	outColor = uColor;
+	outColor = uColor + vec4(vec3(1.0, 1.0, 1.0) * fract(fragmentDistance / 64.0), 1.0);
 }

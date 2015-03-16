@@ -2,6 +2,7 @@
 #include "frame/util.h"
 #include <cmath>
 #include <iostream>
+#include <algorithm> //std::swap
 
 glm::vec2 spline_poly::eval(float t) const
 {
@@ -26,10 +27,26 @@ void spline_poly::build_eval(unsigned detail)
 	m_EvalMesh[pos].normalized = 0;
 	m_EvalMesh[pos].name = "vertexPosition";
 	
+	unsigned len = m_EvalMesh.add_stream();
+	m_EvalMesh[len].type = GL_FLOAT;
+	m_EvalMesh[len].buffer_type = GL_ARRAY_BUFFER;
+	m_EvalMesh[len].components = 1;
+	m_EvalMesh[len].normalized = 0;
+	m_EvalMesh[len].name = "vertexDistance";
+	
+	glm::vec2 p[2] = {glm::vec2(0.0f), this->eval(0.0f)};
+	float vertex_distance = 0.0;
+	
 	for(unsigned i=0; i<detail; i++)
 	{
 		float t = i/float(detail-1);
-		m_EvalMesh[pos].data << this->eval(t);
+		p[0] = this->eval(t);
+		
+		vertex_distance += glm::distance(p[0], p[1]);
+		std::swap(p[0], p[1]);
+		
+		m_EvalMesh[pos].data << p[0];
+		m_EvalMesh[len].data << vertex_distance;
 	}
 	
 	m_EvalMesh.upload();
