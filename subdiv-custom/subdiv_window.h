@@ -9,6 +9,9 @@
 #include "glwrap/shader.h"
 #include "glwrap/mesh.h"
 
+#include "polygon.h"
+#include "editable_polygon.h"
+
 class subdiv_window : public resizable_window
 {
 	private: 
@@ -28,7 +31,6 @@ class subdiv_window : public resizable_window
 		
 		bool init_glew();
 		void init_window();
-		bool init_gl();
 		bool load_resources();
 		
 		void rebuild();

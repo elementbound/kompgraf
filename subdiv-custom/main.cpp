@@ -1,6 +1,6 @@
-#include <GLFW/glfw3.h>
-
 #include "subdiv_window.h"
+
+#include <GLFW/glfw3.h>
 
 #include <iostream> 
 #include <cstdlib> //std::exit
