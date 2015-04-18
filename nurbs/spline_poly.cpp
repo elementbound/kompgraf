@@ -1,5 +1,5 @@
 #include "spline_poly.h"
-#include "frame/util.h"
+#include "glwrap/util.h"
 #include <cmath>
 #include <iostream>
 #include <algorithm> //std::swap

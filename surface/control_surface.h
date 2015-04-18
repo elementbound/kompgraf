@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <GLM/glm.hpp>
-#include "frame/mesh.h"
+#include "glwrap/mesh.h"
 
 class control_surface
 {

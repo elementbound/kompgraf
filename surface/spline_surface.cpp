@@ -1,5 +1,5 @@
 #include "spline_surface.h"
-#include "frame/util.h"
+#include "glwrap/util.h"
 
 glm::vec3 spline_surface::eval(float u, float v) const
 {

@@ -1,7 +1,7 @@
 #ifndef _H_DRAW_CIRCLES_H_
 #define _H_DRAW_CIRCLES_H_
 
-#include "frame/mesh.h"
+#include "glwrap/mesh.h"
 
 class drawCircles
 {

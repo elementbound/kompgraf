@@ -9,7 +9,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/norm.hpp>
 
-#include "frame/window.h"
+#include "glwrap/window.h"
 #include <iostream>
 
 double degtorad(double x){return x/180.0 * 3.14159265;}

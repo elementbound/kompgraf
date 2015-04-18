@@ -2,7 +2,7 @@
 #define _H_EDITABLE_CONTROL_POLY_H_
 
 #include <glm/glm.hpp>
-#include "frame/mesh.h"
+#include "glwrap/mesh.h"
 #include "control_poly.h"
 
 class editable_control_poly : public control_poly 

@@ -5,10 +5,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/io.hpp>
 
-#include "frame/util.h"
-#include "frame/resizable_window.h"
-#include "frame/shader.h"
-#include "frame/mesh.h"
+#include "glwrap/util.h"
+#include "glwrap/resizable_window.h"
+#include "glwrap/shader.h"
+#include "glwrap/mesh.h"
 
 #include "editable_control_poly.h"
 #include "spline_poly.h"

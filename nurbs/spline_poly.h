@@ -2,7 +2,7 @@
 #define _H_SPLINE_POLY_H_
 
 #include <GLM/glm.hpp>
-#include "frame/mesh.h"
+#include "glwrap/mesh.h"
 #include "control_poly.h"
 
 class spline_poly

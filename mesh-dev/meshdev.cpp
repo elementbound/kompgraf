@@ -3,10 +3,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "frame/window.h"
-#include "frame/shader.h"
-#include "frame/mesh.h"
-#include "frame/util.h"
+#include "glwrap/window.h"
+#include "glwrap/shader.h"
+#include "glwrap/mesh.h"
+#include "glwrap/util.h"
 
 #include <iostream>
 #include <string>

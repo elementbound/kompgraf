@@ -1,5 +1,5 @@
 #include "control_surface.h"
-#include "frame/util.h"
+#include "glwrap/util.h"
 
 unsigned control_surface::hash(unsigned row, unsigned column) const {
 	return column + row*m_Columns;

@@ -4,7 +4,7 @@
 #include <glm/gtc/constants.hpp>
 
 #include "editable_control_poly.h"
-#include "frame/util.h" // buffer << glm::vec2
+#include "glwrap/util.h" // buffer << glm::vec2
 
 int editable_control_poly::grab(glm::vec2 mouse, glm::mat4 matView, glm::mat4 matOrtho, glm::vec4 viewport)
 {

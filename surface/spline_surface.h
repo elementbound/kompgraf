@@ -2,7 +2,7 @@
 #define _H_SPLINE_SURFACE_H_
 
 #include <GLM/glm.hpp>
-#include "frame/mesh.h"
+#include "glwrap/mesh.h"
 #include "control_surface.h"
 
 class spline_surface

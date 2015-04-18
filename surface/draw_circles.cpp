@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <GLM/glm.hpp>
 #include <glm/gtc/constants.hpp>
-#include "frame/util.h" //dirvec
+#include "glwrap/util.h" //dirvec
 #include "draw_circles.h"
 
 void drawCircles::begin(bool outline)
