@@ -18,6 +18,7 @@ class subdiv_window : public resizable_window
 		shader_program			m_WireShader;
 		editable_polygon		m_BasePoly;
 		polygon					m_SubdivPoly;
+		separated_mesh			m_SubdivMesh;
 		
 		glm::mat4	m_View;
 		glm::mat4	m_Ortho;
@@ -28,6 +29,8 @@ class subdiv_window : public resizable_window
 		unsigned m_FullQuality = 16;
 		unsigned m_EditQuality = 64;
 		int m_GrabId = -1;
+		
+		unsigned m_SubdivIterations = 4;
 		
 		bool init_glew();
 		void init_window();

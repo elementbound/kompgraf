@@ -1,5 +1,8 @@
 #include "polygon.h"
 
+std::vector<glm::vec2>& 		polygon::data() {return m_Data;}
+const std::vector<glm::vec2>& 	polygon::data() const {return m_Data;}
+
 glm::vec2& 			polygon::get(unsigned i) { return m_Data[i];}
 const glm::vec2&	polygon::get(unsigned i) const { return m_Data[i];}
 glm::vec2&			polygon::operator()(unsigned i) {return this->get(i);}

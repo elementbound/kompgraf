@@ -10,6 +10,9 @@ class polygon
 		std::vector<glm::vec2>	m_Data; 
 		
 	public: 
+		std::vector<glm::vec2>& data();
+		const std::vector<glm::vec2>& data() const;
+	
 		glm::vec2& 			get(unsigned i);
 		const glm::vec2&	get(unsigned i) const;
 		glm::vec2&			operator()(unsigned i);
