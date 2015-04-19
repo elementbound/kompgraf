@@ -7,8 +7,10 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm> //std::min, std::swap
+#include <random>
 
 #include <cstdlib> //std::exit
+#include <cmath>
 
 #include "glwrap/util.h"
 
@@ -94,6 +96,10 @@ void subdiv_window::rebuild()
 	m_SubdivPoly.data() = m_BasePoly.data();
 	
 	//Iteratively subdivide
+	std::mt19937 rd;
+	std::uniform_real_distribution<float> rng(0.0f, 1.0f);
+	rd.seed(0);
+	
 	polygon newPoly;
 	for(unsigned i = 0; i<m_SubdivIterations && !m_SubdivPoly.data().empty(); i++)
 	{
@@ -107,12 +113,15 @@ void subdiv_window::rebuild()
 			glm::vec2 vertices[3] = {m_SubdivPoly[indices[0]], 
 									 m_SubdivPoly[indices[1]], 
 									 m_SubdivPoly[indices[2]]};
-									 
-			glm::vec2 mid = (vertices[0] + vertices[1])/2.0f;
-			glm::vec2 off = (vertices[1] - vertices[2]);
+							
+			float mid_f = rng(rd);
+			float off_f = 0.125f + rng(rd) * 0.125f;
+			
+			glm::vec2 mid = mid_f*vertices[0] + (1.0f-mid_f)*vertices[1];
+			glm::vec2 off = (vertices[1] - vertices[2])*off_f;
 									 
 			newPoly.add(vertices[0]);
-			newPoly.add(mid + off/4.0f);
+			newPoly.add(mid + off);
 		}
 		
 		std::swap(m_SubdivPoly.data(), newPoly.data());
@@ -193,7 +202,6 @@ void subdiv_window::on_key(int key, int scancode, int action, int mods)
 	{
 		m_SubdivIterations++;
 		std::cout << "Subdivs: " << m_SubdivIterations << std::endl;
-		std::cout << char(scancode) << std::endl;
 	}
 	
 	if(key == GLFW_KEY_KP_SUBTRACT && action == GLFW_PRESS)
@@ -202,7 +210,6 @@ void subdiv_window::on_key(int key, int scancode, int action, int mods)
 			m_SubdivIterations--;
 		
 		std::cout << "Subdivs: " << m_SubdivIterations << std::endl;
-		std::cout << char(scancode) << std::endl;
 	}
 	
 	rebuild();
@@ -235,7 +242,7 @@ void subdiv_window::on_refresh()
 	m_WireShader.set_uniform("uMVP", m_Ortho * m_View);
 	
 	m_WireShader.set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-	m_BasePoly.control_mesh().draw();
+	//m_BasePoly.control_mesh().draw();
 	m_BasePoly.knot_mesh().draw();
 	
 	m_WireShader.set_uniform("uColor", glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
