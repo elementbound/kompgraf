@@ -12,8 +12,22 @@ void error_callback(int error, const char* error_str)
 	std::cerr << "[" << error << "]" << error_str << std::endl;
 }
 
+#include <set>
+#include <algorithm>
+#include <iterator>
+
 int main()
 {
+	/*std::set<int> a = {1, 2, 3};
+	std::set<int> b = {3, 4, 5};
+	std::set<int> result;
+
+	std::set_difference(a.begin(), a.end(), b.begin(), b.end(), std::inserter(result));
+
+	for(int i : result)
+		std::cout << i << ' ';
+	return 0;*/
+
 	glfwSetErrorCallback(error_callback);
 	if(!glfwInit())
 		die("Couldn't init GLFW");

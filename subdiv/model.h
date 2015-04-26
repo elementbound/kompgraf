@@ -20,6 +20,8 @@ class model
 	{
 		glm::vec3 position;
 		glm::vec3 normal;
+
+		bool operator<(const vertex_t&) const;
 	};
 
 	typedef std::pair<index_t, index_t> edge_t;
@@ -29,7 +31,13 @@ class model
 		//initializer-list is king
 		std::array<index_t, 3> vertices;
 		std::array<index_t, 3> edges;
+
+		bool operator<(const face_t&) const;
 	};
+
+	typedef std::set<vertex_t> vertexSet_t;
+	typedef std::set<edge_t> edgeSet_t;
+	typedef std::set<face_t> faceSet_t;
 
 	private: 
 		//NOTE: index 0 is reserved for non-existent items
@@ -56,6 +64,14 @@ class model
 
 		indexSet_t findEdgesWithVertex(index_t v) const;
 		indexSet_t findFacesWithEdge(index_t e) const;
+
+		indexSet_t extractVerticesFromEdges(const indexSet_t&) const;
+		indexSet_t extractVerticesFromFaces(const indexSet_t&) const;
+		indexSet_t extractEdgesFromFaces(const indexSet_t&) const;
+
+		vertexSet_t extractVerticesFromIndices(const indexSet_t&) const;
+		edgeSet_t	extractEdgesFromIndices(const indexSet_t&) const;
+		faceSet_t	extractFacesFromIndices(const indexSet_t&) const;
 
 		vertex_t&	getVertex(index_t ind);
 		edge_t&		getEdge(index_t ind);

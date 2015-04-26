@@ -182,6 +182,8 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 		if(fname != "")
 		{
 			m_Model = loadModelFromOBJ(fname.c_str());
+			while(!m_SubdivStack.empty())
+				m_SubdivStack.pop();
 			rebuild();
 		}
 	}

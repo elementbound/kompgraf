@@ -4,8 +4,41 @@
 typedef model::vertex_t 	vertex_t;
 typedef model::edge_t 		edge_t;
 typedef model::face_t 		face_t;
+
 typedef model::index_t 		index_t;
 typedef model::indexSet_t 	indexSet_t;
+
+typedef model::vertexSet_t	vertexSet_t;
+typedef model::edgeSet_t	edgeSet_t;
+typedef model::faceSet_t	faceSet_t;
+
+bool operator<(const glm::vec3& a, const glm::vec3& b)
+{
+	if(a.x != b.x)
+		return a.x < b.x;
+	if(a.y != b.y)
+		return a.y < b.y;
+	if(a.z != b.z)
+		return a.z < b.z;
+
+	return 0;
+}
+
+bool vertex_t::operator<(const vertex_t& rhs) const {
+	if(position != rhs.position)
+		return position < rhs.position;
+	else if(normal != rhs.normal)
+		return normal < rhs.normal;
+	return 0;
+}
+
+bool face_t::operator<(const face_t& rhs) const {
+	if(vertices != rhs.vertices)
+		return vertices < rhs.vertices;
+	else if(edges != rhs.edges)
+		return edges < rhs.edges;
+	return 0;
+}
 
 index_t model::genVertexIndex() const {
 	if(m_Vertices.empty())
@@ -166,6 +199,80 @@ indexSet_t model::findFacesWithEdge(index_t e) const {
 	}
 
 	return retSet;
+}
+
+//
+
+indexSet_t model::extractVerticesFromEdges(const indexSet_t& inputSet) const {
+	indexSet_t resultSet;
+
+	for(const index_t& ind : inputSet)
+	{
+		edge_t item = getEdge(ind);
+		resultSet.insert(item.first);
+		resultSet.insert(item.second);
+	}
+
+	return resultSet;
+}
+
+indexSet_t model::extractVerticesFromFaces(const indexSet_t& inputSet) const {
+	indexSet_t resultSet;
+
+	for(const index_t& ind : inputSet)
+	{
+		face_t item = getFace(ind);
+
+		resultSet.insert(item.vertices[0]);
+		resultSet.insert(item.vertices[1]);
+		resultSet.insert(item.vertices[2]);
+	}
+
+	return resultSet;
+}
+
+indexSet_t model::extractEdgesFromFaces(const indexSet_t& inputSet) const {
+	indexSet_t resultSet;
+
+	for(const index_t& ind : inputSet)
+	{
+		face_t item = getFace(ind);
+
+		resultSet.insert(item.edges[0]);
+		resultSet.insert(item.edges[1]);
+		resultSet.insert(item.edges[2]);
+	}
+
+	return resultSet;
+}
+
+//
+
+vertexSet_t model::extractVerticesFromIndices(const indexSet_t& inputSet) const {
+	vertexSet_t resultSet;
+
+	for(const index_t& ind : inputSet)
+		resultSet.insert(getVertex(ind));
+
+	return resultSet;
+}
+
+edgeSet_t	model::extractEdgesFromIndices(const indexSet_t& inputSet) const {
+	edgeSet_t resultSet;
+
+	for(const index_t& ind : inputSet)
+		resultSet.insert(getEdge(ind));
+
+	return resultSet;
+}
+
+faceSet_t	model::extractFacesFromIndices(const indexSet_t& inputSet) const {
+	faceSet_t resultSet;
+
+	for(const index_t& ind : inputSet)
+		resultSet.insert(getFace(ind));
+
+	return resultSet;
 }
 
 //
