@@ -63,6 +63,7 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 	std::map<index_t, vertex_t>	innerVertices;
 	std::map<index_t, vertex_t> modifiedVertices;
 
+	unsigned progressCounter = 0;
 	for(index_t eid = inputModel.nextEdgeIndex(0); eid != 0; eid = inputModel.nextEdgeIndex(eid))
 	{
 		edge_t currentEdge = inputModel.getEdge(eid);
@@ -96,10 +97,15 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 		innerVertex.normal = glm::normalize(innerVertex.normal);
 
 		innerVertices.insert({eid, innerVertex});
+
+		progressCounter++;
+		rtdbg("Calculating inner vertices... " << 100*progressCounter/inputModel.edgeCount() << '%', 0.05);
 	}
+	dbg('\n');
 
 	//
 
+	progressCounter = 0;
 	for(index_t vid = inputModel.nextVertexIndex(0); vid != 0; vid = inputModel.nextVertexIndex(vid))
 	{
 		vertex_t currentVertex = inputModel.getVertex(vid);
@@ -123,19 +129,21 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 		modifiedVertex.normal = glm::normalize(modifiedVertex.normal);
 
 		modifiedVertices.insert({vid, modifiedVertex});
+
+		progressCounter++;
+		rtdbg("Modifying original vertices... " << 100*progressCounter/inputModel.vertexCount() << '%', 0.05);
 	}
+	dbg('\n');
 
 	//
 
-	int i = 0;
+	progressCounter = 0;
 	for(index_t fid = inputModel.nextFaceIndex(0); fid != 0; fid = inputModel.nextFaceIndex(fid))
 	{
 		face_t currentFace = inputModel.getFace(fid);
 
 		indexSeq_t currentEdgeIds = {currentFace.edges[0], currentFace.edges[1], currentFace.edges[2]};
-		indexSeq_t outerVertexIds;
-		for(const index_t& eid : currentEdgeIds) 
-			outerVertexIds.push_back(inputModel.getEdge(eid).first);
+		indexSeq_t outerVertexIds = {currentFace.vertices[0], currentFace.vertices[1], currentFace.vertices[2]};
 
 		vertexSeq_t outerVertices;
 		vertexSeq_t currentInnerVertices;
@@ -151,11 +159,14 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 
 		resultModel.addFace(currentInnerVertices[0], currentInnerVertices[1], currentInnerVertices[2]);
 
-		if(++i >= 6)
-			break;
+		progressCounter++;
+		rtdbg("Assembling new mesh... " << 100*progressCounter/inputModel.faceCount() << '%', 0.05);
 	}
+	dbg('\n');
 
 	//
+
+	dbg("\t" << inputModel.faceCount() << " -> " << resultModel.faceCount() << '\n');
 
 	return resultModel;
 }
