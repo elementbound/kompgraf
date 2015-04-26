@@ -86,6 +86,10 @@ class model
 		index_t nextEdgeIndex(index_t ind) const;
 		index_t nextFaceIndex(index_t ind) const;
 
+		unsigned vertexCount() const;
+		unsigned edgeCount() const;
+		unsigned faceCount() const;
+
 		//
 
 		void clear();

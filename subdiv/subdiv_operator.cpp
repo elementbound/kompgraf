@@ -25,6 +25,35 @@ model subdivOperator::operator()(const model& inputModel) {
 	return resultModel;
 }
 
+model midpointSubdivOperator::operator()(const model& inputModel) {
+	model resultModel;
+	dbg("Midpoint subdiv, " << inputModel.faceCount());
+
+	for(index_t fid = inputModel.nextFaceIndex(0); fid != 0; fid = inputModel.nextFaceIndex(fid))
+	{
+		face_t currentFace = inputModel.getFace(fid);
+		vertex_t vertices[3] = {
+			inputModel.getVertex(currentFace.vertices[0]),
+			inputModel.getVertex(currentFace.vertices[1]),
+			inputModel.getVertex(currentFace.vertices[2])
+		};
+
+		vertex_t innerVertices[3];
+		for(unsigned i=0; i<3; i++) {
+			innerVertices[i].position = (vertices[i].position + vertices[(i+1)%3].position) / 2.0f;
+			innerVertices[i].normal = (vertices[i].normal + vertices[(i+1)%3].normal) / 2.0f;
+		}
+
+		resultModel.addFace(vertices[0], innerVertices[0], vertices[1]);
+		resultModel.addFace(vertices[1], innerVertices[1], vertices[2]);
+		resultModel.addFace(vertices[2], innerVertices[2], vertices[0]);
+		resultModel.addFace(innerVertices[0], innerVertices[1], innerVertices[2]);
+	}
+
+	dbg(" -> " << resultModel.faceCount() << " faces\n");
+	return resultModel;
+}
+
 model loopSubdivOperator::operator()(const model& inputModel) {
 	dbg("Loop subdiv\n");
 
@@ -96,6 +125,7 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 
 	//
 
+	int i = 0;
 	for(index_t fid = inputModel.nextFaceIndex(0); fid != 0; fid = inputModel.nextFaceIndex(fid))
 	{
 		face_t currentFace = inputModel.getFace(fid);
@@ -118,6 +148,9 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 			resultModel.addFace(currentInnerVertices[i], outerVertices[(i+1)%3], currentInnerVertices[(i+1)%3]);
 
 		resultModel.addFace(currentInnerVertices[0], currentInnerVertices[1], currentInnerVertices[2]);
+
+		if(++i >= 6)
+			break;
 	}
 
 	//

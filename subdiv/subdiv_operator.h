@@ -8,6 +8,11 @@ class subdivOperator {
 		virtual model operator()(const model&);
 };
 
+class midpointSubdivOperator {
+	public:
+		model operator()(const model&);
+};
+
 class loopSubdivOperator : public subdivOperator {
 	public:
 		model operator()(const model&);

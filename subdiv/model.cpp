@@ -351,6 +351,21 @@ index_t model::nextFaceIndex(index_t ind) const {
 
 //
 
+unsigned model::vertexCount() const {
+	return m_Vertices.size();
+}
+
+unsigned model::edgeCount() const {
+	return m_Edges.size();
+}
+
+unsigned model::faceCount() const {
+	return m_Faces.size();
+}
+
+
+//
+
 void model::clear() {
 	m_Vertices.clear();
 	m_Edges.clear();

@@ -21,7 +21,7 @@ class app_Subdiv : public resizable_window
 		shader_program			m_DiffuseShader;
 		model					m_Model;
 		separated_mesh			m_Mesh;
-		loopSubdivOperator		m_SubdivOperator;
+		midpointSubdivOperator	m_SubdivOperator;
 		
 		glm::mat4	m_View;
 		glm::mat4	m_Projection;
