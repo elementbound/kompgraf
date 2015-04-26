@@ -105,10 +105,10 @@ void app_Subdiv::on_open()
 	if(!load_resources())
 		die("Couldn't load resources!");
 
-	m_Model = loadModelFromOBJ("data/lowp-cylinder.obj");
+	m_Model = loadModelFromOBJ("data/smooth-cube.obj");
 	rebuild();
 
-	m_Mesh.upload();
+	//m_SubdivOperator = loopSubdivOperator();
 }
 
 void app_Subdiv::on_fbresize(int w, int h)
@@ -168,12 +168,19 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 
 	if(key == GLFW_KEY_KP_ADD && action == GLFW_PRESS)
 	{
-		//Subdivide
+		std::cout << "Subdividing... \n";
+
+		m_SubdivStack.push(m_Model);
+		m_Model = m_SubdivOperator(m_Model);
 	}
 	
 	if(key == GLFW_KEY_KP_SUBTRACT && action == GLFW_PRESS)
 	{
-		//Unsubdiv
+		if(!m_SubdivStack.empty())
+		{
+			m_Model = m_SubdivStack.top();
+			m_SubdivStack.pop();
+		}
 	}
 
 	if(key == GLFW_KEY_Q && action == GLFW_PRESS)
@@ -184,7 +191,6 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 			m_Model = loadModelFromOBJ(fname.c_str());
 			while(!m_SubdivStack.empty())
 				m_SubdivStack.pop();
-			rebuild();
 		}
 	}
 	

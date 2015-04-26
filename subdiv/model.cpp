@@ -201,6 +201,21 @@ indexSet_t model::findFacesWithEdge(index_t e) const {
 	return retSet;
 }
 
+indexSet_t model::findFacesWithVertex(index_t v) const {
+	indexSet_t retSet;
+
+	for(const auto& p : m_Faces)
+	{
+		const index_t& index = p.first;
+		const face_t& face = p.second;
+
+		if(face.vertices[0] == v || face.vertices[1] == v || face.vertices[2] == v)
+			retSet.insert(index);
+	}
+
+	return retSet;
+}
+
 //
 
 indexSet_t model::extractVerticesFromEdges(const indexSet_t& inputSet) const {

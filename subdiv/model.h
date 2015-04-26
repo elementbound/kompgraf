@@ -64,6 +64,7 @@ class model
 
 		indexSet_t findEdgesWithVertex(index_t v) const;
 		indexSet_t findFacesWithEdge(index_t e) const;
+		indexSet_t findFacesWithVertex(index_t v) const;
 
 		indexSet_t extractVerticesFromEdges(const indexSet_t&) const;
 		indexSet_t extractVerticesFromFaces(const indexSet_t&) const;
