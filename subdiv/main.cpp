@@ -2,9 +2,13 @@
 #include <glm/gtx/io.hpp>
 #include "model.h"
 
-int main()
+int main(int argc, char** argv)
 {
-	model obj = loadModelFromOBJ("data/quad.obj");
+	model obj;
+	if(argc > 1)
+		obj = loadModelFromOBJ(argv[1]);
+	else
+		obj = loadModelFromOBJ("data/quad.obj");
 
 	std::cout << "Vertices: \n";
 	for(auto vid = obj.nextVertexIndex(0); vid != 0; vid = obj.nextVertexIndex(vid))

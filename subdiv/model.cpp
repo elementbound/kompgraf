@@ -105,7 +105,11 @@ index_t model::addFaceWithEdges(index_t e1, index_t e2, index_t e3) {
 
 //
 
+//Use a negative value to use default tolerance
 index_t model::findVertex(vertex_t v, float posTolerance, float normalTolerance) {
+	if(posTolerance < 0.0f ) posTolerance = defaultPositionTolerance;
+	if(normalTolerance < 0.0f) normalTolerance = defaultNormalTolerance;
+
 	for(const std::pair<index_t, vertex_t>& p : m_Vertices) {
 
 		if(glm::length(v.position - p.second.position) < posTolerance && 
