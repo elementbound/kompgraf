@@ -1,4 +1,5 @@
 #include "model.h"
+#include "glwrap/util.h" //buffer << glm::vec3
 
 typedef model::vertex_t 	vertex_t;
 typedef model::edge_t 		edge_t;
@@ -232,6 +233,42 @@ void model::clear() {
 	m_Vertices.clear();
 	m_Edges.clear();
 	m_Faces.clear();
+}
+
+void model::build_drawable(basic_mesh& resultMesh) const {
+	resultMesh.clear_streams();
+
+	unsigned pos = resultMesh.add_stream();
+	unsigned nor = resultMesh.add_stream();
+
+	resultMesh[pos].type = GL_FLOAT;
+	resultMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+	resultMesh[pos].components = 3;
+	resultMesh[pos].normalized = 0;
+	resultMesh[pos].name = "vertexPosition";
+	
+	resultMesh[nor].type = GL_FLOAT;
+	resultMesh[nor].buffer_type = GL_ARRAY_BUFFER;
+	resultMesh[nor].components = 3;
+	resultMesh[nor].normalized = 0;
+	resultMesh[nor].name = "vertexNormal";
+
+	for(const auto& p : m_Faces)
+	{
+		const auto& f = p.second;
+
+		for(unsigned i=0; i<3; i++)
+		{
+			const vertex_t& v = getVertex(f.vertices[i]);
+
+			resultMesh[pos].data << v.position;
+			resultMesh[nor].data << v.normal;
+		}
+	}
+
+	resultMesh.draw_mode = GL_TRIANGLES;
+	resultMesh.storage_policy = GL_STATIC_DRAW:
+	resultMesh.upload();
 }
 
 //

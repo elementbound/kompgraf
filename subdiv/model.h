@@ -3,6 +3,8 @@
 
 #include <glm/glm.hpp>
 
+#include "glwrap/mesh.h"
+
 #include <istream>
 #include <map>
 #include <set>
@@ -70,6 +72,7 @@ class model
 		//
 
 		void clear();
+		void build_drawable(basic_mesh& result) const;
 };
 
 model loadModelFromOBJ(std::istream& is);
