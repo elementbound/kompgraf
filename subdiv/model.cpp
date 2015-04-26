@@ -51,7 +51,7 @@ index_t model::addVertex(vertex_t v, bool checkForDuplicates) {
 
 index_t model::addEdge(index_t v1, index_t v2, bool checkForDuplicates) {
 	index_t retId = 0;
-	bool addEdge = false;
+	bool addEdge = true;
 
 	if(checkForDuplicates) {
 		retId = findEdge(v1, v2);
@@ -120,12 +120,16 @@ index_t model::findVertex(vertex_t v, float posTolerance, float normalTolerance)
 	return 0;
 }
 
-index_t model::findEdge(index_t v1, index_t v2) {
+index_t model::findEdge(index_t v1, index_t v2, bool orderMatters) {
 	edge_t needle = edge_t(v1, v2);
+	edge_t rev_needle = edge_t(v2, v1);
 
 	for(const std::pair<index_t, edge_t>& p : m_Edges)
 	{
 		if(needle == p.second)
+			return p.first;
+
+		if(!orderMatters && rev_needle == p.second)
 			return p.first;
 	}
 

@@ -48,9 +48,9 @@ class model
 		index_t addFace(index_t v1, index_t v2, index_t v3);
 		index_t addFace(vertex_t v1, vertex_t v2, vertex_t v3);
 		index_t addFaceWithEdges(index_t e1, index_t e2, index_t e3);
-		
+
 		index_t findVertex(vertex_t v, float posTolerance = -1.0f, float normalTolerance = -1.0f);
-		index_t findEdge(index_t v1, index_t v2);
+		index_t findEdge(index_t v1, index_t v2, bool orderMatters = 0);
 
 		indexSet_t findEdgesWithVertex(index_t v) const;
 		indexSet_t findFacesWithEdge(index_t e) const;
