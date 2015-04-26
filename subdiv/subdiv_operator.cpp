@@ -25,10 +25,10 @@ model subdivOperator::operator()(const model& inputModel) {
 	return resultModel;
 }
 
-model midpointSubdivOperator::operator()(const model& inputModel) {
+model sierpinskiSubdivOperator::operator()(const model& inputModel) {
 	model resultModel;
-	dbg("Midpoint subdiv, " << inputModel.faceCount());
 
+	unsigned processedFaceCount = 0;
 	for(index_t fid = inputModel.nextFaceIndex(0); fid != 0; fid = inputModel.nextFaceIndex(fid))
 	{
 		face_t currentFace = inputModel.getFace(fid);
@@ -44,13 +44,15 @@ model midpointSubdivOperator::operator()(const model& inputModel) {
 			innerVertices[i].normal = (vertices[i].normal + vertices[(i+1)%3].normal) / 2.0f;
 		}
 
-		resultModel.addFace(vertices[0], innerVertices[0], vertices[1]);
-		resultModel.addFace(vertices[1], innerVertices[1], vertices[2]);
-		resultModel.addFace(vertices[2], innerVertices[2], vertices[0]);
-		resultModel.addFace(innerVertices[0], innerVertices[1], innerVertices[2]);
+		resultModel.addFace(innerVertices[0], innerVertices[1], vertices[1]);
+		resultModel.addFace(innerVertices[1], innerVertices[2], vertices[2]);
+		resultModel.addFace(innerVertices[2], innerVertices[0], vertices[0]);
+
+		processedFaceCount++;
+		rtdbg("Progress: " << (processedFaceCount*100.0 / inputModel.faceCount()) << '%', 0.05);
 	}
 
-	dbg(" -> " << resultModel.faceCount() << " faces\n");
+	dbg("Midpoint subdiv, " << inputModel.faceCount() << " -> " << resultModel.faceCount() << " faces\n");
 	return resultModel;
 }
 

@@ -1,5 +1,6 @@
 #include "model.h"
 #include "glwrap/util.h" //buffer << glm::vec3
+#include "debug.h"
 
 typedef model::vertex_t 	vertex_t;
 typedef model::edge_t 		edge_t;
@@ -390,6 +391,7 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 	resultMesh[nor].normalized = 0;
 	resultMesh[nor].name = "vertexNormal";
 
+	unsigned face_count = 0;
 	for(const auto& p : m_Faces)
 	{
 		const auto& f = p.second;
@@ -401,7 +403,11 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 			resultMesh[pos].data << v.position;
 			resultMesh[nor].data << v.normal;
 		}
+
+		face_count++;
 	}
+
+	dbg("Uploaded " << face_count << " faces\n");
 
 	resultMesh.draw_mode = GL_TRIANGLES;
 	resultMesh.storage_policy = GL_STATIC_DRAW;

@@ -47,6 +47,7 @@ void app_Subdiv::init_window()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 	
 	m_View = glm::mat4(1.0f);
 }

@@ -8,7 +8,7 @@ class subdivOperator {
 		virtual model operator()(const model&);
 };
 
-class midpointSubdivOperator {
+class sierpinskiSubdivOperator {
 	public:
 		model operator()(const model&);
 };
