@@ -216,3 +216,153 @@ index_t model::nextFaceIndex(index_t ind) const {
 	else
 		return it->first;
 }
+
+//
+
+void model::clear() {
+	m_Vertices.clear();
+	m_Edges.clear();
+	m_Faces.clear();
+}
+
+//
+
+#include <sstream>
+#include <string>
+//strtod because std::stod is broken on my compiler ( mingw 4.8.1 )
+#include <cstdlib>
+#include <fstream>
+
+#include <vector>
+
+void read_vec2(std::istream& is, glm::vec2& v)
+{
+	std::string component[2];
+	is >> component[0] >> component[1];
+	
+	v.x = (float)atof(component[0].c_str());
+	v.y = (float)atof(component[1].c_str());
+}
+
+void read_vec3(std::istream& is, glm::vec3& v)
+{
+	std::string component[3];
+	is >> component[0] >> component[1] >> component[2];
+	
+	v.x = (float)atof(component[0].c_str());
+	v.y = (float)atof(component[1].c_str());
+	v.z = (float)atof(component[2].c_str());
+}
+
+model loadModelFromOBJ(std::istream& is)
+{
+	model retModel;
+
+	std::string line;
+	std::stringstream parser;
+	std::string token; 
+
+	std::vector<glm::vec3> obj_positions;
+	std::vector<glm::vec3> obj_normals;
+	std::vector<glm::vec2> obj_texcoords;
+	std::vector<std::array<index_t, 3>> obj_vertices;
+	
+	//
+	
+	obj_positions.reserve(8192);
+	obj_normals.reserve(8192);
+	obj_texcoords.reserve(8192);
+
+	//Collect data
+	while(is)
+	{
+		std::getline(is, line);
+		
+		//Ignore empty lines
+		if(line.size() == 0)
+			continue;
+		
+		//Ignore comments
+		if(line[0] == '#')
+			continue;
+		
+		parser.str(line);
+		parser.seekg(0);
+		
+		parser >> token;
+
+		if(token == "v")
+		{
+			glm::vec3 v;
+			read_vec3(parser, v);
+			
+			obj_positions.push_back(v);
+		} 
+		else if(token == "vn")
+		{
+			glm::vec3 n;
+			read_vec3(parser, n);
+			
+			obj_normals.push_back(n);
+		}
+		else if(token == "vt")
+		{
+			glm::vec2 uv;
+			read_vec2(parser, uv);
+			
+			obj_texcoords.push_back(uv);
+		}
+		else if(token == "f")
+		{
+			std::array<index_t, 3> f;
+			
+			for(unsigned j=0; j<3; j++)
+			{
+				for(unsigned i=0; i<3; i++)
+				{
+					parser >> f[i];
+					
+					if(i!=2)
+						parser.ignore(std::numeric_limits<std::streamsize>::max(), '/');
+				}
+				
+				obj_vertices.push_back(f);
+			}
+		}
+	}
+
+	//Add vertices
+	for(const auto& f: obj_vertices) {
+		const index_t pos_index = f[0] - 1;
+		const index_t uv_index = f[1] - 1;
+		const index_t normal_index = f[2] - 1;
+
+		vertex_t v;
+			v.position = obj_positions[pos_index];
+			v.normal = obj_normals[normal_index];
+
+		retModel.addVertex(v);
+	}
+
+	//Link faces, like a simple GL_TRIANGLES would
+	std::vector<index_t> face_buffer;
+	face_buffer.reserve(3);
+
+	for(index_t i = retModel.nextVertexIndex(0); i!=0; i = retModel.nextVertexIndex(i))
+	{
+		face_buffer.push_back(i);
+		if(face_buffer.size() == 3)
+		{
+			retModel.addFace(face_buffer[0], face_buffer[1], face_buffer[2]);
+			face_buffer.clear();
+		}
+	}
+
+	return retModel;
+}
+
+model loadModelFromOBJ(const char* fname)
+{
+	std::ifstream is(fname);
+	return loadModelFromOBJ(is);
+}

@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+#include <istream>
 #include <map>
 #include <set>
 #include <array>
@@ -62,6 +63,13 @@ class model
 		index_t nextVertexIndex(index_t ind) const;
 		index_t nextEdgeIndex(index_t ind) const;
 		index_t nextFaceIndex(index_t ind) const;
+
+		//
+
+		void clear();
 };
+
+model loadModelFromOBJ(std::istream& is);
+model loadModelFromOBJ(const char* fname);
 
 #endif
