@@ -1,10 +1,10 @@
 #include "model.h"
 
-using model::vertex_t;
-using model::edge_t;
-using model::face_t;
-using model::index_t;
-using model::indexSet_t;
+typedef model::vertex_t 	vertex_t;
+typedef model::edge_t 		edge_t;
+typedef model::face_t 		face_t;
+typedef model::index_t 		index_t;
+typedef model::indexSet_t 	indexSet_t;
 
 index_t model::genVertexIndex() const {
 	if(m_Vertices.empty())
@@ -79,18 +79,6 @@ index_t model::addFace(index_t v1, index_t v2, index_t v3) {
 	return retId;
 }
 
-index_t model::addFace(index_t e1, index_t e2, index_t e3) {
-	index_t retId = genFaceIndex();
-	edge_t edges[3] = {getEdge(e1), getEdge(e2), getEdge(e3)};
-	
-	face_t f;
-	f.vertices = {edges[0].first, edges[1].first, edges[2].first};
-	f.edges = {e1, e2, e3};
-
-	 m_Faces.insert({retId, f});
-	 return retId;
-}
-
 index_t model::addFace(vertex_t v1, vertex_t v2, vertex_t v3) {
 	index_t retId = genFaceIndex();
 	face_t f;
@@ -103,9 +91,21 @@ index_t model::addFace(vertex_t v1, vertex_t v2, vertex_t v3) {
 	return retId;
 }
 
+index_t model::addFaceWithEdges(index_t e1, index_t e2, index_t e3) {
+	index_t retId = genFaceIndex();
+	edge_t edges[3] = {getEdge(e1), getEdge(e2), getEdge(e3)};
+	
+	face_t f;
+	f.vertices = {edges[0].first, edges[1].first, edges[2].first};
+	f.edges = {e1, e2, e3};
+
+	 m_Faces.insert({retId, f});
+	 return retId;
+}
+
 //
 
-index_t model::findVertex(vertex_t v, float posTolerance = 1e-4f, float normalTolerance = 1e-4f) {
+index_t model::findVertex(vertex_t v, float posTolerance, float normalTolerance) {
 	for(const std::pair<index_t, vertex_t>& p : m_Vertices) {
 		if(glm::length(v.position - p.second.position) < posTolerance && 
 			glm::abs(glm::dot(v.normal, p.second.normal)) < normalTolerance )
@@ -129,7 +129,7 @@ index_t model::findEdge(index_t v1, index_t v2) {
 
 //
 
-indexSet_t findEdgesWithVertex(index_t v) const {
+indexSet_t model::findEdgesWithVertex(index_t v) const {
 	indexSet_t retSet;
 
 	for(const auto& p : m_Edges) {
@@ -143,12 +143,12 @@ indexSet_t findEdgesWithVertex(index_t v) const {
 	return retSet;
 }
 
-indexSet_t findFacesWithEdge(index_t e) const {
+indexSet_t model::findFacesWithEdge(index_t e) const {
 	indexSet_t retSet;
 
 	for(const auto& p : m_Faces)
 	{
-		const index_t& index = p.frist;
+		const index_t& index = p.first;
 		const face_t& face = p.second;
 
 		if(face.edges[0] == e || face.edges[1] == e || face.edges[2] == e)
@@ -160,7 +160,7 @@ indexSet_t findFacesWithEdge(index_t e) const {
 
 //
 
-vertex_t model::getVertex(index_t ind) {
+vertex_t& model::getVertex(index_t ind) {
 	return m_Vertices.at(ind);
 }
 edge_t& model::getEdge(index_t ind) {
