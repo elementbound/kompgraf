@@ -407,8 +407,6 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 		face_count++;
 	}
 
-	dbg("Uploaded " << face_count << " faces\n");
-
 	resultMesh.draw_mode = GL_TRIANGLES;
 	resultMesh.storage_policy = GL_STATIC_DRAW;
 	resultMesh.upload();
@@ -463,6 +461,7 @@ model loadModelFromOBJ(std::istream& is)
 	obj_texcoords.reserve(8192);
 
 	//Collect data
+	dbg("[OBJ]Parsing data... ");
 	while(is)
 	{
 		std::getline(is, line);
@@ -519,11 +518,13 @@ model loadModelFromOBJ(std::istream& is)
 			}
 		}
 	}
+	dbg("Done!\n");
 
 	//Assembly
 	std::vector<index_t> face_buffer;
 	face_buffer.reserve(3);
 
+	unsigned progressCounter = 0;
 	for(const auto& f: obj_vertices) {
 		const index_t pos_index = f[0] - 1;
 		const index_t uv_index = f[1] - 1;
@@ -541,7 +542,11 @@ model loadModelFromOBJ(std::istream& is)
 			retModel.addFace(face_buffer[0], face_buffer[1], face_buffer[2]);
 			face_buffer.clear();
 		}
+
+		progressCounter++;
+		rtdbg("[OBJ]Assembling model... " << (progressCounter*100 / obj_vertices.size()) << '%', 0.05);
 	}
+	dbg("[OBJ]Assembling model... Done!\n");
 
 	return retModel;
 }

@@ -173,6 +173,8 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 
 		m_SubdivStack.push(m_Model);
 		m_Model = m_SubdivOperator(m_Model);
+
+		rebuild();
 	}
 	
 	if(key == GLFW_KEY_KP_SUBTRACT && action == GLFW_PRESS)
@@ -181,6 +183,8 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 		{
 			m_Model = m_SubdivStack.top();
 			m_SubdivStack.pop();
+
+			rebuild();
 		}
 	}
 
@@ -192,10 +196,10 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 			m_Model = loadModelFromOBJ(fname.c_str());
 			while(!m_SubdivStack.empty())
 				m_SubdivStack.pop();
+
+			rebuild();
 		}
 	}
-	
-	rebuild();
 }
 
 void app_Subdiv::on_refresh()
