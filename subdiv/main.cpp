@@ -1,38 +1,42 @@
-#include <iostream>
-#include <glm/gtx/io.hpp>
-#include "model.h"
+#include "app.h"
 
-int main(int argc, char** argv)
+#include <GLFW/glfw3.h>
+
+#include <iostream> 
+#include <cstdlib> //std::exit
+
+#define die(msg) {std::cerr << msg << std::endl; std::exit(1);}
+
+void error_callback(int error, const char* error_str)
 {
-	model obj;
-	if(argc > 1)
-		obj = loadModelFromOBJ(argv[1]);
-	else
-		obj = loadModelFromOBJ("data/quad.obj");
+	std::cerr << "[" << error << "]" << error_str << std::endl;
+}
 
-	std::cout << "Vertices: \n";
-	for(auto vid = obj.nextVertexIndex(0); vid != 0; vid = obj.nextVertexIndex(vid))
+int main()
+{
+	glfwSetErrorCallback(error_callback);
+	if(!glfwInit())
+		die("Couldn't init GLFW");
+	
+	app_Subdiv wnd;
+	
+	glewExperimental = GL_TRUE;
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SAMPLES, 8);
+	
+	wnd.open(640,480, "coolSUBDIV");
+	if(!wnd)
+		die("Couldn't create window");
+	
+	glfwSwapInterval(0);
+	
+	while(!glfwWindowShouldClose(wnd.handle()))
 	{
-		auto v = obj.getVertex(vid);
-
-		std::cout << "\t" << vid << ": " << v.position << " " << v.normal << std::endl;
+		wnd.refresh();
+		glfwPollEvents();
 	}
-
-	std::cout << "\nEdges: \n";
-	for(auto eid = obj.nextEdgeIndex(0); eid != 0; eid = obj.nextEdgeIndex(eid))
-	{
-		auto e = obj.getEdge(eid);
-
-		std::cout << "\t" << eid << ": " << e.first << " " << e.second << std::endl;
-	}
-
-	std::cout << "\nFaces: \n";
-	for(auto fid = obj.nextFaceIndex(0); fid != 0; fid = obj.nextFaceIndex(fid))
-	{
-		auto f = obj.getFace(fid);
-
-		std::cout << "\t" << fid << ": " << f.vertices[0] << " " << f.vertices[1] << " " << f.vertices[2] << std::endl;
-	}
-
+	
 	return 0;
 }

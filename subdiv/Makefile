@@ -3,11 +3,13 @@ GLWRAP_BINS = bin/window.o bin/resizable_window.o bin/basic_mesh.o bin/separated
 APP_BINS = bin/model.o
 LINKER_SETTINGS = -lglfw3 -lgdi32 -lopengl32 -lglew32
 
-build: glwrap
+build: 
 	g++ ${CXX_FLAGS} -c model.cpp -o bin/model.o
+	g++ ${CXX_FLAGS} -c app.cpp -o bin/app.o
 	g++ ${CXX_FLAGS} -c main.cpp -o bin/main.o
 
-	g++ ${GLWRAP_BINS} ${APP_BINS} bin/main.o ${LINKER_SETTINGS} -o subdiv
+	g++ ${GLWRAP_BINS} ${APP_BINS} bin/app.o bin/main.o ${LINKER_SETTINGS} -o subdiv
+	copy /Y ..\glew32.dll .\glew32.dll
 
 glwrap: 
 	g++ ${CXX_FLAGS} -c ../glwrap/util.cpp -o bin/util.o

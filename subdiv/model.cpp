@@ -267,7 +267,7 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 	}
 
 	resultMesh.draw_mode = GL_TRIANGLES;
-	resultMesh.storage_policy = GL_STATIC_DRAW:
+	resultMesh.storage_policy = GL_STATIC_DRAW;
 	resultMesh.upload();
 }
 
