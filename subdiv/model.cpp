@@ -4,6 +4,7 @@ using model::vertex_t;
 using model::edge_t;
 using model::face_t;
 using model::index_t;
+using model::indexSet_t;
 
 index_t model::genVertexIndex() const {
 	if(m_Vertices.empty())
@@ -128,6 +129,37 @@ index_t model::findEdge(index_t v1, index_t v2) {
 
 //
 
+indexSet_t findEdgesWithVertex(index_t v) const {
+	indexSet_t retSet;
+
+	for(const auto& p : m_Edges) {
+		const index_t& index = p.first;
+		const edge_t& edge = p.second;
+
+		if(edge.first == v || edge.second == v)
+			retSet.insert(index);
+	}
+
+	return retSet;
+}
+
+indexSet_t findFacesWithEdge(index_t e) const {
+	indexSet_t retSet;
+
+	for(const auto& p : m_Faces)
+	{
+		const index_t& index = p.frist;
+		const face_t& face = p.second;
+
+		if(face.edges[0] == e || face.edges[1] == e || face.edges[2] == e)
+			retSet.insert(index);
+	}
+
+	return retSet;
+}
+
+//
+
 vertex_t model::getVertex(index_t ind) {
 	return m_Vertices.at(ind);
 }
@@ -148,4 +180,39 @@ const edge_t& model::getEdge(index_t ind) const {
 
 const face_t& model::getFace(index_t ind) const {
 	return m_Faces.at(ind);
+}
+
+//
+
+index_t model::nextVertexIndex(index_t ind) const {
+	if(ind == 0)
+		return m_Vertices.begin()->first;
+
+	auto it = m_Vertices.upper_bound(ind);
+	if(it == m_Vertices.end())
+		return 0;
+	else
+		return it->first;
+}
+
+index_t model::nextEdgeIndex(index_t ind) const {
+	if(ind == 0)
+		return m_Edges.begin()->first;
+
+	auto it = m_Edges.upper_bound(ind);
+	if(it == m_Edges.end())
+		return 0;
+	else
+		return it->first;
+}
+
+index_t model::nextFaceIndex(index_t ind) const {
+	if(ind == 0)
+		return m_Faces.begin()->first;
+
+	auto it = m_Faces.upper_bound(ind);
+	if(it == m_Faces.end())
+		return 0;
+	else
+		return it->first;
 }

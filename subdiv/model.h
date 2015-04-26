@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include <map>
+#include <set>
 
 class model
 {
@@ -13,7 +14,6 @@ class model
 		glm::vec3 normal;
 	};
 
-	typedef unsigned 					index_t;
 	typedef std::pair<index_t, index_t> edge_t;
 
 	struct face_t
@@ -21,6 +21,9 @@ class model
 		index_t vertices[3];
 		index_t edges[3];
 	};
+
+	typedef unsigned index_t;
+	typedef std::set<index_t> indexSet_t;
 
 	private: 
 		//NOTE: index 0 is reserved for non-existent items
@@ -42,6 +45,9 @@ class model
 		index_t findVertex(vertex_t v, float posTolerance = 1e-4f, float normalTolerance = 1e-4f);
 		index_t findEdge(index_t v1, index_t v2);
 
+		indexSet_t findEdgesWithVertex(index_t v) const;
+		indexSet_t findFacesWithEdge(index_t e) const;
+
 		vertex_t&	getVertex(index_t ind);
 		edge_t&		getEdge(index_t ind);
 		face_t&		getFace(index_t ind);
@@ -49,6 +55,10 @@ class model
 		const vertex_t&		getVertex(index_t ind) const;
 		const edge_t&		getEdge(index_t ind) const;
 		const face_t&		getFace(index_t ind) const;
+
+		index_t nextVertexIndex(index_t ind) const;
+		index_t nextEdgeIndex(index_t ind) const;
+		index_t nextFaceIndex(index_t ind) const;
 };
 
 #endif
