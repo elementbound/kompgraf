@@ -107,8 +107,9 @@ index_t model::addFaceWithEdges(index_t e1, index_t e2, index_t e3) {
 
 index_t model::findVertex(vertex_t v, float posTolerance, float normalTolerance) {
 	for(const std::pair<index_t, vertex_t>& p : m_Vertices) {
+
 		if(glm::length(v.position - p.second.position) < posTolerance && 
-			glm::abs(glm::dot(v.normal, p.second.normal)) < normalTolerance )
+			glm::abs(glm::dot(v.normal, p.second.normal)) > 1.0f-normalTolerance )
 			return p.first;
 	}
 
@@ -331,7 +332,10 @@ model loadModelFromOBJ(std::istream& is)
 		}
 	}
 
-	//Add vertices
+	//Assembly
+	std::vector<index_t> face_buffer;
+	face_buffer.reserve(3);
+
 	for(const auto& f: obj_vertices) {
 		const index_t pos_index = f[0] - 1;
 		const index_t uv_index = f[1] - 1;
@@ -341,16 +345,9 @@ model loadModelFromOBJ(std::istream& is)
 			v.position = obj_positions[pos_index];
 			v.normal = obj_normals[normal_index];
 
-		retModel.addVertex(v);
-	}
+		index_t vid = retModel.addVertex(v, true);
 
-	//Link faces, like a simple GL_TRIANGLES would
-	std::vector<index_t> face_buffer;
-	face_buffer.reserve(3);
-
-	for(index_t i = retModel.nextVertexIndex(0); i!=0; i = retModel.nextVertexIndex(i))
-	{
-		face_buffer.push_back(i);
+		face_buffer.push_back(vid);
 		if(face_buffer.size() == 3)
 		{
 			retModel.addFace(face_buffer[0], face_buffer[1], face_buffer[2]);
