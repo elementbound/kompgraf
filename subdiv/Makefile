@@ -1,7 +1,7 @@
 CXX_FLAGS = -std=c++11 -I../
 GLWRAP_BINS = bin/window.o bin/resizable_window.o bin/basic_mesh.o bin/separated_mesh.o bin/shader.o bin/util.o
 APP_BINS = bin/model.o
-LINKER_SETTINGS = -lglfw3 -lgdi32 -lopengl32 -lglew32
+LINKER_SETTINGS = -lglfw3 -lgdi32 -lopengl32 -lglew32 -lcomdlg32
 
 build: 
 	g++ ${CXX_FLAGS} -c model.cpp -o bin/model.o

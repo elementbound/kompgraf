@@ -175,6 +175,16 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 	{
 		//Unsubdiv
 	}
+
+	if(key == GLFW_KEY_Q && action == GLFW_PRESS)
+	{
+		std::string fname = get_open_filename();
+		if(fname != "")
+		{
+			m_Model = loadModelFromOBJ(fname.c_str());
+			rebuild();
+		}
+	}
 	
 	rebuild();
 }
@@ -196,3 +206,51 @@ void app_Subdiv::on_refresh()
 	
 	glfwSwapBuffers(this->handle());
 }
+
+#if defined(WIN32) or defined(_WIN32) or defined(_WIN64)
+	//#define WIN32_LEAN_AND_MEAN
+	#include <windows.h>
+
+	std::string app_Subdiv::get_open_filename()
+	{
+		//https://msdn.microsoft.com/en-us/library/ms646829%28v=vs.85%29.aspx#open_file
+		//modded a bit, ofc
+		OPENFILENAME ofn;       // common dialog box structure
+		char szFile[260];       // buffer for file name
+		HWND hwnd = NULL;       // owner window
+		HANDLE hf;              // file handle
+
+		// Initialize OPENFILENAME
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = hwnd;
+		ofn.lpstrFile = szFile;
+		// Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
+		// use the contents of szFile to initialize itself.
+		ofn.lpstrFile[0] = '\0';
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFilter = "Mesh\0*.obj\0All\0*.*\0";
+		ofn.nFilterIndex = 1;
+		ofn.lpstrFileTitle = NULL;
+		ofn.nMaxFileTitle = 0;
+		ofn.lpstrInitialDir = NULL;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+		// Display the Open dialog box. 
+
+		if (GetOpenFileName(&ofn)==TRUE) 
+			return ofn.lpstrFile;
+		else
+			return "";
+	}
+#else
+	#include <iostream>
+
+	std::string app_Subdiv::get_open_filename() 
+	{
+		std::string in;
+		std::cin >> in;
+
+		return in;
+	}
+#endif

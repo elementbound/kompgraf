@@ -12,6 +12,7 @@
 #include "model.h"
 
 #include <stack>
+#include <string>
 
 class app_Subdiv : public resizable_window
 {
@@ -37,6 +38,8 @@ class app_Subdiv : public resizable_window
 		bool init_glew();
 		void init_window();
 		bool load_resources();
+
+		std::string get_open_filename();
 		
 		void rebuild();
 		
