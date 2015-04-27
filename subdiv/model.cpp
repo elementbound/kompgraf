@@ -587,6 +587,7 @@ void model::clear() {
 }
 
 void model::build_drawable(basic_mesh& resultMesh) const {
+	dbg("Building mesh\n");
 	resultMesh.clear_streams();
 
 	unsigned pos = resultMesh.add_stream();
@@ -597,12 +598,14 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 	resultMesh[pos].components = 3;
 	resultMesh[pos].normalized = 0;
 	resultMesh[pos].name = "vertexPosition";
+	resultMesh[pos].data.capacity(m_Faces.size() * 3 * sizeof(float) * 3);
 	
 	resultMesh[nor].type = GL_FLOAT;
 	resultMesh[nor].buffer_type = GL_ARRAY_BUFFER;
 	resultMesh[nor].components = 3;
 	resultMesh[nor].normalized = 0;
 	resultMesh[nor].name = "vertexNormal";
+	resultMesh[nor].data.capacity(m_Faces.size() * 3 * sizeof(float) * 3);
 
 	unsigned face_count = 0;
 	for(const auto& p : m_Faces)
@@ -618,11 +621,15 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 		}
 
 		face_count++;
+		rtdbg("\tBuffering faces... " << 100*face_count / m_Faces.size() << "%", 0.05);
 	}
+	dbg("\tBuffering faces... Done\n");
 
 	resultMesh.draw_mode = GL_TRIANGLES;
 	resultMesh.storage_policy = GL_STATIC_DRAW;
+	dbg("\tUploading to GPU... ");
 	resultMesh.upload();
+	dbg("Done\n");
 }
 
 //
