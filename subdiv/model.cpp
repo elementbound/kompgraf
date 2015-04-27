@@ -62,6 +62,15 @@ index_t model::genFaceIndex() const {
 		return (*m_Faces.rbegin()).first + 1;
 }
 
+bool model::areVerticesEqual(const vertex_t& v1, const vertex_t& v2, float posTolerance, float normalTolerance) const {
+return	glm::length(v1.position - v2.position) < posTolerance && 
+		glm::abs(glm::dot(v1.normal, v2.normal)) > 1.0f-normalTolerance;
+}
+
+bool model::areVerticesEqual(index_t v1, index_t v2, float posTolerance, float normalTolerance) const {
+	return areVerticesEqual(getVertex(v1), getVertex(v2), posTolerance, normalTolerance);
+}
+
 //
 
 index_t model::addVertex(vertex_t v, bool checkForDuplicates) {
@@ -114,13 +123,16 @@ index_t model::addFace(index_t v1, index_t v2, index_t v3) {
 	return retId;
 }
 
-index_t model::addFace(vertex_t v1, vertex_t v2, vertex_t v3) {
+index_t model::addFace(vertex_t v1, vertex_t v2, vertex_t v3, bool checkForDuplicates) {
 	index_t retId = genFaceIndex();
 	face_t f;
-	f.vertices = {addVertex(v1, true), addVertex(v2, true), addVertex(v3, true)};
-	f.edges = {	addEdge(f.vertices[0], f.vertices[1], true), 
-				addEdge(f.vertices[1], f.vertices[2], true), 
-				addEdge(f.vertices[2], f.vertices[0], true) };
+	f.vertices = {	addVertex(v1, checkForDuplicates), 
+					addVertex(v2, checkForDuplicates), 
+					addVertex(v3, checkForDuplicates) };
+
+	f.edges = {	addEdge(f.vertices[0], f.vertices[1], checkForDuplicates), 
+				addEdge(f.vertices[1], f.vertices[2], checkForDuplicates), 
+				addEdge(f.vertices[2], f.vertices[0], checkForDuplicates) };
 
 	m_Faces.insert({retId, f});
 	return retId;
@@ -147,8 +159,7 @@ index_t model::findVertex(vertex_t v, float posTolerance, float normalTolerance)
 
 	for(const std::pair<index_t, vertex_t>& p : m_Vertices) {
 
-		if(glm::length(v.position - p.second.position) < posTolerance && 
-			glm::abs(glm::dot(v.normal, p.second.normal)) > 1.0f-normalTolerance )
+		if(areVerticesEqual(v, p.second, posTolerance, normalTolerance))
 			return p.first;
 	}
 
@@ -215,6 +226,154 @@ indexSet_t model::findFacesWithVertex(index_t v) const {
 	}
 
 	return retSet;
+}
+
+//
+
+void model::removeDuplicateVertices(float posTolerance, float normalTolerance)
+{
+	if(posTolerance < 0.0f) posTolerance = defaultPositionTolerance;
+	if(normalTolerance < 0.0f) normalTolerance = defaultNormalTolerance;
+
+	dbg("Removing duplicate vertices\n");
+	dbg("\tPosition tolerance: " << posTolerance << '\n');
+	dbg("\tNormal tolerance: " << normalTolerance << '\n');
+
+	indexSet_t verticesToRemove;
+	std::map<index_t, index_t> vertexRemap;
+
+	unsigned progressCounter = 0;
+	for(auto duplicateIterator = m_Vertices.cbegin(); duplicateIterator != m_Vertices.cend(); duplicateIterator++)
+	{
+		const auto& duplicatePair = *duplicateIterator;
+		index_t remapId = duplicatePair.first;
+
+		for(auto checkIterator = m_Vertices.cbegin(); checkIterator != duplicateIterator; checkIterator++)
+		{
+			const auto& checkPair = *checkIterator;
+
+			if(areVerticesEqual(duplicatePair.second, checkPair.second, posTolerance, normalTolerance))
+			{
+				remapId = checkPair.first;
+				break;
+			}
+		}
+
+		if(remapId != duplicatePair.first)
+		{
+			vertexRemap.insert({duplicatePair.first, remapId});
+			verticesToRemove.insert(duplicatePair.first);
+		}
+		else
+			vertexRemap.insert({duplicatePair.first, duplicatePair.first});
+
+		progressCounter++;
+		rtdbg("\tLooking for duplicates... " << 100*progressCounter / m_Vertices.size() << '%' ,0.05);
+	}
+	dbg("\tLooking for duplicates... Done\n");
+
+	/*dbg("\tVertex ID remaps: \n");
+	for(auto& p : vertexRemap)
+		dbg("\t\t" << p.first << " -> " << p.second << '\n');*/
+
+	dbg("\tRemapping vertex indices\n");
+	progressCounter = 0;
+	for(auto& p : m_Edges)
+	{
+		edge_t& currentEdge = p.second;
+
+		currentEdge.first = vertexRemap[currentEdge.first];
+		currentEdge.second = vertexRemap[currentEdge.second];
+
+		progressCounter++;
+		rtdbg("\t\tEdges: " << 100*progressCounter / m_Edges.size() << "%", 0.05);
+	}
+	dbg("\t\tEdges: Done\n");
+
+	progressCounter = 0;
+	for(auto& p : m_Faces) 
+	{
+		face_t& currentFace = p.second;
+
+		currentFace.vertices[0] = vertexRemap[currentFace.vertices[0]];
+		currentFace.vertices[1] = vertexRemap[currentFace.vertices[1]];
+		currentFace.vertices[2] = vertexRemap[currentFace.vertices[2]];
+
+		progressCounter++;
+		rtdbg("\t\tFaces: " << 100*progressCounter / m_Faces.size() << "%", 0.05);
+	}
+	dbg("\t\tFaces: Done\n");
+
+	dbg("\tRemoving " << verticesToRemove.size() << " duplicate vertices\n");
+	for(index_t vid : verticesToRemove)
+		m_Vertices.erase(vid);
+
+	dbg("\tDone!\n");
+}
+
+void model::removeDuplicateEdges(bool orderMatters) 
+{
+	dbg("Removing duplicate edges\n");
+
+	indexSet_t edgesToRemove;
+	std::map<index_t, index_t> edgeRemap;
+
+	unsigned progressCounter = 0;
+	for(auto duplicateIterator = m_Edges.cbegin(); duplicateIterator != m_Edges.end(); duplicateIterator++)
+	{
+		const auto& duplicatePair = *duplicateIterator;
+		index_t remapId = duplicatePair.first;
+
+		edge_t currentEdge = duplicatePair.second;
+		edge_t reverseEdge;
+		if(orderMatters)
+			reverseEdge = currentEdge;
+		else
+			reverseEdge = {currentEdge.second, currentEdge.first};
+
+		for(auto checkIterator = m_Edges.cbegin(); checkIterator != m_Edges.end(); checkIterator++)
+		{
+			const auto& checkPair = *checkIterator;
+
+			if(currentEdge == checkPair.second || reverseEdge == checkPair.second)
+			{
+				remapId = checkPair.first;
+				break;
+			}
+		}
+
+		if(remapId != duplicatePair.first)
+		{
+			edgeRemap.insert({duplicatePair.first, remapId});
+			edgesToRemove.insert(duplicatePair.first);
+		}
+		else
+			edgeRemap.insert({duplicatePair.first, duplicatePair.first});
+
+		progressCounter++;
+		rtdbg("\tLooking for duplicate edges... " << 100*progressCounter / m_Edges.size() << "%", 0.05);
+	}
+	dbg("\tLooking for duplicate edges... Done!\n");
+
+	progressCounter = 0;
+	for(auto& p : m_Faces)
+	{
+		face_t& currentFace = p.second;
+
+		currentFace.edges[0] = edgeRemap[currentFace.edges[0]];
+		currentFace.edges[1] = edgeRemap[currentFace.edges[1]];
+		currentFace.edges[2] = edgeRemap[currentFace.edges[2]];
+
+		progressCounter++;
+		rtdbg("\tRemapping faces... " << 100*progressCounter / m_Faces.size() << "%", 0.05);
+	}
+	dbg("\tRemapping faces... Done\n");
+
+	dbg("\tRemoving " << edgesToRemove.size() << " duplicates\n");
+	for(index_t e : edgesToRemove)
+		m_Edges.erase(e);
+
+	dbg("\tDone!\n");
 }
 
 //
@@ -534,7 +693,7 @@ model loadModelFromOBJ(std::istream& is)
 			v.position = obj_positions[pos_index];
 			v.normal = obj_normals[normal_index];
 
-		index_t vid = retModel.addVertex(v, true);
+		index_t vid = retModel.addVertex(v, false);
 
 		face_buffer.push_back(vid);
 		if(face_buffer.size() == 3)
@@ -547,6 +706,9 @@ model loadModelFromOBJ(std::istream& is)
 		rtdbg("[OBJ]Assembling model... " << (progressCounter*100 / obj_vertices.size()) << '%', 0.05);
 	}
 	dbg("[OBJ]Assembling model... Done!\n");
+
+	retModel.removeDuplicateVertices();
+	retModel.removeDuplicateEdges();
 
 	return retModel;
 }

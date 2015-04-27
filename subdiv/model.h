@@ -49,6 +49,9 @@ class model
 		index_t genEdgeIndex() const;
 		index_t genFaceIndex() const;
 
+		bool areVerticesEqual(const vertex_t& v1, const vertex_t& v2, float posTolerance, float normalTolerance) const;
+		bool areVerticesEqual(index_t v1, index_t v2, float posTolerance, float normalTolerance) const;
+
 	public: 
 		float defaultPositionTolerance = 1e-4f;
 		float defaultNormalTolerance = 0.05f;
@@ -56,7 +59,7 @@ class model
 		index_t addVertex(vertex_t v, bool checkForDuplicates = 0);
 		index_t addEdge(index_t v1, index_t v2, bool checkForDuplicates = 0);
 		index_t addFace(index_t v1, index_t v2, index_t v3);
-		index_t addFace(vertex_t v1, vertex_t v2, vertex_t v3);
+		index_t addFace(vertex_t v1, vertex_t v2, vertex_t v3, bool checkForDuplicates = 0);
 		index_t addFaceWithEdges(index_t e1, index_t e2, index_t e3);
 
 		index_t findVertex(vertex_t v, float posTolerance = -1.0f, float normalTolerance = -1.0f);
@@ -73,6 +76,9 @@ class model
 		vertexSet_t extractVerticesFromIndices(const indexSet_t&) const;
 		edgeSet_t	extractEdgesFromIndices(const indexSet_t&) const;
 		faceSet_t	extractFacesFromIndices(const indexSet_t&) const;
+
+		void removeDuplicateVertices(float posTolerance = -1.0f, float normalTolerance = -1.0f);
+		void removeDuplicateEdges(bool orderMatters = 0);
 
 		vertex_t&	getVertex(index_t ind);
 		edge_t&		getEdge(index_t ind);

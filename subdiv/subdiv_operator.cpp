@@ -155,14 +155,17 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 			currentInnerVertices.push_back(innerVertices[ind]);
 
 		for(unsigned i=0; i<3; i++)
-			resultModel.addFace(currentInnerVertices[i], outerVertices[(i+1)%3], currentInnerVertices[(i+1)%3]);
+			resultModel.addFace(currentInnerVertices[i], outerVertices[(i+1)%3], currentInnerVertices[(i+1)%3], false);
 
-		resultModel.addFace(currentInnerVertices[0], currentInnerVertices[1], currentInnerVertices[2]);
+		resultModel.addFace(currentInnerVertices[0], currentInnerVertices[1], currentInnerVertices[2], false);
 
 		progressCounter++;
 		rtdbg("Assembling new mesh... " << 100*progressCounter/inputModel.faceCount() << '%', 0.05);
 	}
 	dbg('\n');
+
+	resultModel.removeDuplicateVertices();
+	resultModel.removeDuplicateEdges();
 
 	//
 
