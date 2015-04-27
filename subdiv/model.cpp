@@ -342,38 +342,49 @@ void model::removeDuplicateEdges(bool orderMatters)
 
 	indexSet_t edgesToRemove;
 	std::map<index_t, index_t> edgeRemap;
+	std::map<index_t, indexSet_t> firstVertexClusters; 
 
 	unsigned progressCounter = 0;
-	for(auto duplicateIterator = m_Edges.cbegin(); duplicateIterator != m_Edges.end(); duplicateIterator++)
-	{
-		const auto& duplicatePair = *duplicateIterator;
-		index_t remapId = duplicatePair.first;
+	if(!orderMatters) {
+		for(auto& p : m_Edges) {
+			edge_t& currentEdge = p.second;
 
-		edge_t currentEdge = duplicatePair.second;
-		edge_t reverseEdge;
-		if(orderMatters)
-			reverseEdge = currentEdge;
-		else
-			reverseEdge = {currentEdge.second, currentEdge.first};
+			if(currentEdge.first >= currentEdge.second)
+				std::swap(currentEdge.first, currentEdge.second);
 
-		for(auto checkIterator = m_Edges.cbegin(); checkIterator != m_Edges.end(); checkIterator++)
-		{
-			const auto& checkPair = *checkIterator;
+			progressCounter++;
+			rtdbg("\tSorting edge vertices... " << 100*progressCounter / m_Edges.size() << "%", 0.05);
+		}
+		dbg("\tSorting edge vertices... Done\n");
+	}
 
-			if(currentEdge == checkPair.second || reverseEdge == checkPair.second)
-			{
-				remapId = checkPair.first;
+	progressCounter = 0;
+	for(const auto& p : m_Edges) {
+		const index_t& currentId = p.first;
+		const edge_t& currentEdge = p.second;
+		firstVertexClusters[currentEdge.first].insert(currentId);
+
+		progressCounter++;
+		rtdbg("\tClustering edges by first vertex... " << 100*progressCounter / m_Edges.size() << "%", 0.05);
+	}
+	dbg("\tClustering edges by first vertex... Done\n");
+
+	progressCounter = 0;
+	for(const auto& p : m_Edges) {
+		const index_t& currentId = p.first;
+		const edge_t& currentEdge = p.second;
+		index_t remapId;
+
+		for(const index_t& checkId : firstVertexClusters[currentEdge.first]) {
+			if(getEdge(checkId) == currentEdge) {
+				remapId = checkId;
 				break;
 			}
 		}
 
-		if(remapId != duplicatePair.first)
-		{
-			edgeRemap.insert({duplicatePair.first, remapId});
-			edgesToRemove.insert(duplicatePair.first);
-		}
-		else
-			edgeRemap.insert({duplicatePair.first, duplicatePair.first});
+		if(remapId != currentId) 
+			edgesToRemove.insert(currentId);
+		edgeRemap.insert({currentId, remapId});
 
 		progressCounter++;
 		rtdbg("\tLooking for duplicate edges... " << 100*progressCounter / m_Edges.size() << "%", 0.05);
