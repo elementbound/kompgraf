@@ -80,6 +80,8 @@ class model
 		void removeDuplicateVertices(float posTolerance = -1.0f, float normalTolerance = -1.0f);
 		void removeDuplicateEdges(bool orderMatters = 0);
 
+		std::pair<glm::vec3, glm::vec3> getBounds() const;
+
 		vertex_t&	getVertex(index_t ind);
 		edge_t&		getEdge(index_t ind);
 		face_t&		getFace(index_t ind);

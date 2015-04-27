@@ -1,5 +1,6 @@
 #include "model.h"
 #include "glwrap/util.h" //buffer << glm::vec3
+#include <array>
 #include "debug.h"
 
 typedef model::vertex_t 	vertex_t;
@@ -232,6 +233,8 @@ indexSet_t model::findFacesWithVertex(index_t v) const {
 
 void model::removeDuplicateVertices(float posTolerance, float normalTolerance)
 {
+	typedef std::array<int, 3> chunk_t;
+
 	if(posTolerance < 0.0f) posTolerance = defaultPositionTolerance;
 	if(normalTolerance < 0.0f) normalTolerance = defaultNormalTolerance;
 
@@ -239,36 +242,58 @@ void model::removeDuplicateVertices(float posTolerance, float normalTolerance)
 	dbg("\tPosition tolerance: " << posTolerance << '\n');
 	dbg("\tNormal tolerance: " << normalTolerance << '\n');
 
+
 	indexSet_t verticesToRemove;
 	std::map<index_t, index_t> vertexRemap;
+	std::map<chunk_t, indexSet_t> vertexClusters;
+	auto bounds = getBounds();
+	int clusterResolution = 32;
 
 	unsigned progressCounter = 0;
-	for(auto duplicateIterator = m_Vertices.cbegin(); duplicateIterator != m_Vertices.cend(); duplicateIterator++)
+	for(const auto& p : m_Vertices)
 	{
-		const auto& duplicatePair = *duplicateIterator;
-		index_t remapId = duplicatePair.first;
+		const vertex_t& currentVertex = p.second;
+		glm::vec3 meshSpacePos = (currentVertex.position - bounds.first) / (bounds.second - bounds.first);
+		chunk_t currentChunk = {
+			int(meshSpacePos.x * clusterResolution), 
+			int(meshSpacePos.y * clusterResolution), 
+			int(meshSpacePos.z * clusterResolution) 
+		};
 
-		for(auto checkIterator = m_Vertices.cbegin(); checkIterator != duplicateIterator; checkIterator++)
-		{
-			const auto& checkPair = *checkIterator;
+		vertexClusters[currentChunk].insert(p.first);
 
-			if(areVerticesEqual(duplicatePair.second, checkPair.second, posTolerance, normalTolerance))
-			{
-				remapId = checkPair.first;
+		progressCounter++;
+		rtdbg("\tSorting vertices into chunks... " << 100*progressCounter / m_Vertices.size() << "%", 0.05);
+	}
+	dbg("\tSorting vertices into chunks... Done\n");
+
+	progressCounter = 0;
+	for(const auto& p : m_Vertices)
+	{
+		const vertex_t& currentVertex = p.second;
+		glm::vec3 meshSpacePos = (currentVertex.position - bounds.first) / (bounds.second - bounds.first);
+		chunk_t currentChunk = {
+			int(meshSpacePos.x * clusterResolution), 
+			int(meshSpacePos.y * clusterResolution), 
+			int(meshSpacePos.z * clusterResolution) 
+		};
+
+		index_t remapId;
+
+		for(const auto& c : vertexClusters[currentChunk]) {
+			if(areVerticesEqual(p.first, c, posTolerance, normalTolerance)) {
+				remapId = c;
 				break;
 			}
 		}
 
-		if(remapId != duplicatePair.first)
-		{
-			vertexRemap.insert({duplicatePair.first, remapId});
-			verticesToRemove.insert(duplicatePair.first);
-		}
-		else
-			vertexRemap.insert({duplicatePair.first, duplicatePair.first});
+		if(remapId != p.first)
+			verticesToRemove.insert(p.first);
+
+		vertexRemap.insert({p.first, remapId});
 
 		progressCounter++;
-		rtdbg("\tLooking for duplicates... " << 100*progressCounter / m_Vertices.size() << '%' ,0.05);
+		rtdbg("\tLooking for duplicates... " << 100*progressCounter / m_Vertices.size() << "%", 0.05);
 	}
 	dbg("\tLooking for duplicates... Done\n");
 
@@ -374,6 +399,24 @@ void model::removeDuplicateEdges(bool orderMatters)
 		m_Edges.erase(e);
 
 	dbg("\tDone!\n");
+}
+
+//
+
+std::pair<glm::vec3, glm::vec3> model::getBounds() const {
+	std::pair<glm::vec3, glm::vec3> bounds;
+
+	if(!m_Vertices.empty()) {
+		bounds.first  = m_Vertices.begin()->second.position;
+		bounds.second = m_Vertices.begin()->second.position;
+	}
+
+	for(const auto& p : m_Vertices) {
+		bounds.first  = glm::min(bounds.first,  p.second.position);
+		bounds.second = glm::max(bounds.second, p.second.position);
+	}
+
+	return bounds;
 }
 
 //
