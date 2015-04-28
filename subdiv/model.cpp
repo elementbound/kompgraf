@@ -247,7 +247,7 @@ void model::removeDuplicateVertices(float posTolerance, float normalTolerance)
 	std::map<index_t, index_t> vertexRemap;
 	std::map<chunk_t, indexSet_t> vertexClusters;
 	auto bounds = getBounds();
-	int clusterResolution = 32;
+	int clusterResolution = 256;
 
 	unsigned progressCounter = 0;
 	for(const auto& p : m_Vertices)
