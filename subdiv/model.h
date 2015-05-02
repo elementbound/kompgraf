@@ -101,10 +101,12 @@ class model
 		//
 
 		void clear();
-		void build_drawable(basic_mesh& result) const;
 };
 
 model loadModelFromOBJ(std::istream& is);
 model loadModelFromOBJ(const char* fname);
+
+void buildMeshFromModel(const model& inputModel, basic_mesh& result);
+void buildWireframeFromModel(const model& inputModel, basic_mesh& result);
 
 #endif

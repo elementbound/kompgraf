@@ -89,7 +89,7 @@ bool app_Subdiv::load_resources()
 
 void app_Subdiv::rebuild() 
 {
-	m_Model.build_drawable(m_Mesh);
+	buildWireframeFromModel(m_Model,m_Mesh);
 	m_DiffuseShader.use();
 	m_Mesh.bind();
 }

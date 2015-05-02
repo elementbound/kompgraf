@@ -586,7 +586,7 @@ void model::clear() {
 	m_Faces.clear();
 }
 
-void model::build_drawable(basic_mesh& resultMesh) const {
+void buildMeshFromModel(const model& inputModel, basic_mesh& resultMesh) {
 	dbg("Building mesh\n");
 	resultMesh.clear_streams();
 
@@ -598,34 +598,65 @@ void model::build_drawable(basic_mesh& resultMesh) const {
 	resultMesh[pos].components = 3;
 	resultMesh[pos].normalized = 0;
 	resultMesh[pos].name = "vertexPosition";
-	resultMesh[pos].data.capacity(m_Faces.size() * 3 * sizeof(float) * 3);
+	resultMesh[pos].data.capacity(inputModel.faceCount() * 3 * sizeof(float) * 3);
 	
 	resultMesh[nor].type = GL_FLOAT;
 	resultMesh[nor].buffer_type = GL_ARRAY_BUFFER;
 	resultMesh[nor].components = 3;
 	resultMesh[nor].normalized = 0;
 	resultMesh[nor].name = "vertexNormal";
-	resultMesh[nor].data.capacity(m_Faces.size() * 3 * sizeof(float) * 3);
+	resultMesh[nor].data.capacity(inputModel.faceCount() * 3 * sizeof(float) * 3);
 
-	unsigned face_count = 0;
-	for(const auto& p : m_Faces)
-	{
-		const auto& f = p.second;
+	unsigned progressCounter = 0;
+	for(index_t faceId = inputModel.nextFaceIndex(0); faceId != 0; faceId = inputModel.nextFaceIndex(faceId)) {
+		const auto& f = inputModel.getFace(faceId);
 
 		for(unsigned i=0; i<3; i++)
 		{
-			const vertex_t& v = getVertex(f.vertices[i]);
+			const vertex_t& v = inputModel.getVertex(f.vertices[i]);
 
 			resultMesh[pos].data << v.position;
 			resultMesh[nor].data << v.normal;
 		}
 
-		face_count++;
-		rtdbg("\tBuffering faces... " << 100*face_count / m_Faces.size() << "%", 0.05);
+		progressCounter++;
+		rtdbg("\tBuffering faces... " << 100*progressCounter / inputModel.faceCount() << "%", 0.05);
 	}
 	dbg("\tBuffering faces... Done\n");
 
 	resultMesh.draw_mode = GL_TRIANGLES;
+	resultMesh.storage_policy = GL_STATIC_DRAW;
+	dbg("\tUploading to GPU... ");
+	resultMesh.upload();
+	dbg("Done\n");
+}
+
+void buildWireframeFromModel(const model& inputModel, basic_mesh& resultMesh) {
+	dbg("Building wireframe\n");
+	resultMesh.clear_streams();
+
+	unsigned pos = resultMesh.add_stream();
+
+	resultMesh[pos].type = GL_FLOAT;
+	resultMesh[pos].buffer_type = GL_ARRAY_BUFFER;
+	resultMesh[pos].components = 3;
+	resultMesh[pos].normalized = 0;
+	resultMesh[pos].name = "vertexPosition";
+	resultMesh[pos].data.capacity(inputModel.faceCount() * 3 * sizeof(float) * 3);
+
+	unsigned progressCounter = 0;
+	for(index_t edgeId = inputModel.nextEdgeIndex(0); edgeId != 0; edgeId = inputModel.nextEdgeIndex(edgeId)) {
+		const auto& currentEdge = inputModel.getEdge(edgeId);
+
+		resultMesh[pos].data << inputModel.getVertex(currentEdge.first).position
+							 << inputModel.getVertex(currentEdge.second).position;
+
+		progressCounter++;
+		rtdbg("\tBuffering edges... " << 100*progressCounter / inputModel.edgeCount() << "%", 0.05);
+	}
+	dbg("\tBuffering faces... Done\n");
+
+	resultMesh.draw_mode = GL_LINES;
 	resultMesh.storage_policy = GL_STATIC_DRAW;
 	dbg("\tUploading to GPU... ");
 	resultMesh.upload();
