@@ -18,4 +18,9 @@ class loopSubdivOperator : public subdivOperator {
 		model operator()(const model&);
 };
 
+class butterflySubdivOperator : public subdivOperator {
+	public: 
+		model operator()(const model&); 
+};
+
 #endif

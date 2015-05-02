@@ -26,7 +26,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 8);
 	
-	wnd.open(640,480, "coolSUBDIV");
+	wnd.open(640,480, "actualSUBDIV");
 	if(!wnd)
 		die("Couldn't create window");
 	
