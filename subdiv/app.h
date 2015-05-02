@@ -18,11 +18,17 @@
 class app_Subdiv : public resizable_window
 {
 	private: 
-		shader_program			m_DiffuseShader;
-		model					m_Model;
-		separated_mesh			m_Mesh;
-		butterflySubdivOperator	m_SubdivOperator;
+		shader_program					m_DiffuseShader;
+		shader_program					m_WireShader;
+		model							m_Model;
+		separated_mesh					m_Mesh;
+		separated_mesh					m_Wireframe;
 		
+		std::vector<std::pair<std::string,subdivOperator*>>	m_SubdivOperators;
+
+		unsigned	m_DrawMode = 1;
+		unsigned	m_SubdivMode = 0;
+
 		glm::mat4	m_View;
 		glm::mat4	m_Projection;
 		glm::vec4	m_Viewport;

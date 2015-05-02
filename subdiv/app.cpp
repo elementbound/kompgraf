@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <cstdlib> //std::exit
+#include <algorithm> //std::max
 #include <cmath>
 
 #include "glwrap/util.h"
@@ -57,7 +58,10 @@ bool app_Subdiv::load_resources()
 	std::vector<const char*> file_list = 
 	{
 		"data/diffuse.vs",
-		"data/diffuse.fs"
+		"data/diffuse.fs",
+
+		"data/wireframe.vs",
+		"data/wireframe.fs"
 	};
 	
 	bool fail = false;
@@ -83,15 +87,33 @@ bool app_Subdiv::load_resources()
 		glBindFragDataLocation(m_DiffuseShader.handle(), 0, "outColor");
 		m_DiffuseShader.link();
 	std::cout << "done\n";
+
+	std::cout << "Compiling wireframe shader... ";
+		m_WireShader.create();
+		
+		if(!m_WireShader.attach(read_file("data/wireframe.vs").c_str(), shader_program::shader_type::vertex))
+			dieret("\nCouldn't attach vertex shader", 0);
+		
+		if(!m_WireShader.attach(read_file("data/wireframe.fs").c_str(), shader_program::shader_type::fragment))
+			dieret("\nCouldn't attach fragment shader", 0);
+		
+		glBindFragDataLocation(m_WireShader.handle(), 0, "outColor");
+		m_WireShader.link();
+	std::cout << "done\n";
 	
 	return 1;
 }
 
 void app_Subdiv::rebuild() 
 {
-	buildWireframeFromModel(m_Model,m_Mesh);
+	buildMeshFromModel(m_Model, m_Mesh);
+	buildWireframeFromModel(m_Model, m_Wireframe);
+
 	m_DiffuseShader.use();
 	m_Mesh.bind();
+
+	m_WireShader.use();
+	m_Wireframe.bind();
 }
 
 void app_Subdiv::on_open()
@@ -109,7 +131,9 @@ void app_Subdiv::on_open()
 	m_Model = loadModelFromOBJ("data/smooth-cube.obj");
 	rebuild();
 
-	//m_SubdivOperator = loopSubdivOperator();
+	m_SubdivOperators.push_back({"Loop", (subdivOperator*)new loopSubdivOperator()});
+	m_SubdivOperators.push_back({"Butterfly", (subdivOperator*)new butterflySubdivOperator()});
+	m_SubdivOperators.push_back({"Sierpinski", (subdivOperator*)new sierpinskiSubdivOperator()});
 }
 
 void app_Subdiv::on_fbresize(int w, int h)
@@ -172,7 +196,7 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 		std::cout << "Subdividing... \n";
 
 		m_SubdivStack.push(m_Model);
-		m_Model = m_SubdivOperator(m_Model);
+		m_Model = m_SubdivOperators[m_SubdivMode].second->apply(m_Model);
 
 		rebuild();
 	}
@@ -200,6 +224,14 @@ void app_Subdiv::on_key(int key, int scancode, int action, int mods)
 			rebuild();
 		}
 	}
+
+	if(key == GLFW_KEY_W && action == GLFW_PRESS) 
+		m_DrawMode = std::max((m_DrawMode+1) % 8, 1u);
+
+	if(key == GLFW_KEY_E && action == GLFW_PRESS) {
+		m_SubdivMode = (m_SubdivMode + 1) % m_SubdivOperators.size();
+		std::cout << "Subdiv mode: " << m_SubdivOperators[m_SubdivMode].first << "\n";
+	}
 }
 
 void app_Subdiv::on_refresh()
@@ -210,12 +242,30 @@ void app_Subdiv::on_refresh()
 	m_CameraAt = dirvec(m_CameraRot.y, m_CameraRot.x) * m_CameraDst;
 	m_View = glm::lookAt(m_CameraAt, glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
 
-	m_DiffuseShader.use();
-	m_DiffuseShader.set_uniform("uModelView", m_View); 
-	m_DiffuseShader.set_uniform("uProjection", m_Projection); 
-	m_DiffuseShader.set_uniform("uLightDir", glm::vec3(0.707f, 0.707f, 0.0f)); 
+	if(m_DrawMode & 0x1) {
+		glEnable(GL_DEPTH_TEST);
+			m_DiffuseShader.use();
+			m_DiffuseShader.set_uniform("uModelView", m_View); 
+			m_DiffuseShader.set_uniform("uProjection", m_Projection); 
+			m_DiffuseShader.set_uniform("uLightDir", glm::vec3(0.707f, 0.707f, 0.0f)); 
+			m_Mesh.draw();
+	}
 
-	m_Mesh.draw();
+	if(m_DrawMode & 0x2) {
+		glDisable(GL_DEPTH_TEST);
+			m_WireShader.use();
+			m_WireShader.set_uniform("uMVP", m_Projection * m_View); 
+			m_WireShader.set_uniform("uColor", glm::vec4(0,0,0, 0.125f));
+			m_Wireframe.draw();
+	}
+
+	if(m_DrawMode & 0x4) {
+		glEnable(GL_DEPTH_TEST);
+			m_WireShader.use();
+			m_WireShader.set_uniform("uMVP", m_Projection * m_View); 
+			m_WireShader.set_uniform("uColor", glm::vec4(0,0,0, 0.5f));
+			m_Wireframe.draw();
+	}
 	
 	glfwSwapBuffers(this->handle());
 }

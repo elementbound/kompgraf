@@ -642,7 +642,7 @@ void buildWireframeFromModel(const model& inputModel, basic_mesh& resultMesh) {
 	resultMesh[pos].components = 3;
 	resultMesh[pos].normalized = 0;
 	resultMesh[pos].name = "vertexPosition";
-	resultMesh[pos].data.capacity(inputModel.faceCount() * 3 * sizeof(float) * 3);
+	resultMesh[pos].data.capacity(inputModel.edgeCount() * 2 * sizeof(float) * 3);
 
 	unsigned progressCounter = 0;
 	for(index_t edgeId = inputModel.nextEdgeIndex(0); edgeId != 0; edgeId = inputModel.nextEdgeIndex(edgeId)) {

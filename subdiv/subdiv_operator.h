@@ -6,9 +6,10 @@
 class subdivOperator {
 	public: 
 		virtual model operator()(const model&);
+		model apply(const model&);
 };
 
-class sierpinskiSubdivOperator {
+class sierpinskiSubdivOperator : public subdivOperator {
 	public:
 		model operator()(const model&);
 };

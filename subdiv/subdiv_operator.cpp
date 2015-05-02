@@ -20,12 +20,17 @@ typedef std::vector<vertex_t>	vertexSeq_t;
 typedef std::vector<edge_t>		edgeSeq_t;
 typedef std::vector<face_t>		faceSeq_t;
 
+model subdivOperator::apply(const model& inputModel) {
+	return this->operator()(inputModel);
+}
+
 model subdivOperator::operator()(const model& inputModel) {
 	model resultModel = inputModel;
 	return resultModel;
 }
 
 model sierpinskiSubdivOperator::operator()(const model& inputModel) {
+	dbg("Sierpinski subdiv\n");
 	model resultModel;
 
 	unsigned processedFaceCount = 0;
@@ -49,7 +54,7 @@ model sierpinskiSubdivOperator::operator()(const model& inputModel) {
 		resultModel.addFace(innerVertices[2], innerVertices[0], vertices[0]);
 
 		processedFaceCount++;
-		rtdbg("Progress: " << (processedFaceCount*100.0 / inputModel.faceCount()) << '%', 0.05);
+		rtdbg("Progress: " << (processedFaceCount*100 / inputModel.faceCount()) << '%', 0.05);
 	}
 
 	dbg("Midpoint subdiv, " << inputModel.faceCount() << " -> " << resultModel.faceCount() << " faces\n");
