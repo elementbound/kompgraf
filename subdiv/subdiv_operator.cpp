@@ -85,21 +85,27 @@ model loopSubdivOperator::operator()(const model& inputModel) {
 
 		vertexSet_t neighborVertices = inputModel.extractVerticesFromIndices(neighborVertexIds);
 
-		//TODO: check local topology
-
 		vertex_t innerVertex;
 			innerVertex.position = glm::vec3(0.0f);
 			innerVertex.normal = glm::vec3(0.0f);
 
+		float weightSum = 0.0f;
 		for(const vertex_t& v : currentVertices) {
 			innerVertex.position += 3.0f/8.0f * v.position;
 			innerVertex.normal += 3.0f/8.0f * v.normal;
+
+			weightSum += 3.0f/8.0f;
 		}
 
 		for(const vertex_t& v : neighborVertices) {
 			innerVertex.position += 1.0f/8.0f * v.position;
 			innerVertex.normal += 1.0f/8.0f * v.normal;
+
+			weightSum += 1.0f/8.0f;
 		}
+
+		innerVertex.position /= weightSum;
+		innerVertex.normal /= weightSum;
 
 		innerVertex.normal = glm::normalize(innerVertex.normal);
 
